@@ -1,5 +1,6 @@
 "ISAPI client for Home Assistant integration."
 
+import copy
 import logging
 from typing import Any
 
@@ -22,6 +23,7 @@ from .const import (
     EVENTS_COORDINATOR,
     RTSP_PORT_FORCED,
     SECONDARY_COORDINATOR,
+    supports_target_detection,
 )
 from .coordinator import EventsCoordinator, SecondaryCoordinator
 from .isapi import (
@@ -31,7 +33,11 @@ from .isapi import (
     ISAPIForbiddenError,
     ISAPIUnauthorizedError,
 )
-from .isapi.const import EVENT_IO
+from .isapi.const import (
+    DETECTION_TARGET_HUMAN,
+    DETECTION_TARGET_VEHICLE,
+    EVENT_IO,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -134,12 +140,28 @@ class HikvisionDevice(ISAPIClient):
             # Build unique_id
             device_id_param = f"_{camera_id}" if camera_id else ""
             io_port_id_param = f"_{event.io_port_id}" if event.io_port_id != 0 else ""
-            unique_id = f"{slugify(self.device_info.serial_no.lower())}{device_id_param}{io_port_id_param}_{event.id}"
+            base_unique_id = f"{slugify(self.device_info.serial_no.lower())}{device_id_param}{io_port_id_param}"
 
             if EVENTS.get(event.id):
-                event.unique_id = unique_id
+                event.unique_id = f"{base_unique_id}_{event.id}"
                 event.disabled = "center" not in event.notifications  # Disable if not set Notify Surveillance Center
                 events.append(event)
+
+                # Create target-specific events for smart events that support it
+                if supports_target_detection(event.id):
+                    for target in [DETECTION_TARGET_HUMAN, DETECTION_TARGET_VEHICLE]:
+                        target_event = EventInfo(
+                            id=event.id,
+                            channel_id=event.channel_id,
+                            io_port_id=event.io_port_id,
+                            unique_id=f"{base_unique_id}_{event.id}_{target}",
+                            url=event.url,
+                            is_proxy=event.is_proxy,
+                            disabled=event.disabled,
+                            notifications=event.notifications.copy(),
+                            detection_target=target,
+                        )
+                        events.append(target_event)
         return events
 
     def handle_exception(self, ex: Exception, details: str = ""):

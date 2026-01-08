@@ -4,7 +4,12 @@ from typing import Final
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 
-from .isapi.const import EVENTS as ISAPI_EVENTS
+from .isapi.const import (
+    DETECTION_TARGET_HUMAN,
+    DETECTION_TARGET_VEHICLE,
+    EVENTS as ISAPI_EVENTS,
+    EVENTS_WITH_TARGET_DETECTION,
+)
 
 DOMAIN: Final = "hikvision_next"
 
@@ -66,3 +71,13 @@ EVENTS = {
         "device_class": BinarySensorDeviceClass.MOTION,
     },
 }
+
+
+def get_target_event_id(base_event_id: str, detection_target: str) -> str:
+    """Generate target-specific event ID."""
+    return f"{base_event_id}_{detection_target}"
+
+
+def supports_target_detection(event_id: str) -> bool:
+    """Check if event supports target-specific detection."""
+    return event_id in EVENTS_WITH_TARGET_DETECTION

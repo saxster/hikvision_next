@@ -197,14 +197,21 @@ async def test_ipc_multichannel_event_switch(
 
     assert device.capabilities.is_multi_channel
     assert len(device.cameras[0].events_info) == 2
-    assert len(device.cameras[1].events_info) == 4
+    # After adding person/vehicle-specific events for fielddetection, linedetection, regionentrance, regionexiting
+    # Original 4 events become: 4 generic + (4 events with target detection * 2 targets) = 4 + 8 = 12
+    assert len(device.cameras[1].events_info) == 12
 
     switch_entities = [
         'switch.ds_2se4c425mwg_e_0000000000aawrfc0000000_1_motiondetection',
         'switch.ds_2se4c425mwg_e_0000000000aawrfc0000000_1_tamperdetection',
         'switch.ds_2se4c425mwg_e_0000000000aawrfc0000000_2_fielddetection',
         'switch.ds_2se4c425mwg_e_0000000000aawrfc0000000_2_linedetection',
-        # 2 events are diabled
+        # Target-specific switches
+        'switch.ds_2se4c425mwg_e_0000000000aawrfc0000000_2_fielddetection_human',
+        'switch.ds_2se4c425mwg_e_0000000000aawrfc0000000_2_fielddetection_vehicle',
+        'switch.ds_2se4c425mwg_e_0000000000aawrfc0000000_2_linedetection_human',
+        'switch.ds_2se4c425mwg_e_0000000000aawrfc0000000_2_linedetection_vehicle',
+        # 2 events are disabled (regionentrance, regionexiting and their target-specific variants)
     ]
     for entity_id in switch_entities:
         assert hass.states.get(entity_id)
