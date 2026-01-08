@@ -105,6 +105,7 @@ class CapabilitiesInfo:
     support_event_mutex_checking: bool = False
     input_ports: int = 0
     output_ports: int = 0
+    support_two_way_audio: bool = False  # if device supports two-way audio
 
 
 @dataclass
@@ -135,3 +136,15 @@ class ProtocolsInfo:
     """Holds info of supported protocols."""
 
     rtsp_port: int = 554
+
+
+@dataclass
+class TwoWayAudioInfo:
+    """Holds info for two-way audio channel."""
+
+    id: int
+    enabled: bool
+    audio_compression: str  # e.g., "G.711ulaw", "G.711alaw", "G.722.1", "G.726", "MP2L2", "PCM"
+    audio_input_type: str  # e.g., "MicIn", "LineIn"
+    speaker_volume: int = 50
+    mic_volume: int = 50
