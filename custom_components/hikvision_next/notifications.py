@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from http import HTTPStatus
 import ipaddress
 import logging
@@ -12,17 +13,32 @@ from aiohttp import web
 from requests_toolbelt.multipart import MultipartDecoder
 
 from homeassistant.components.http import HomeAssistantView
-from homeassistant.const import CONTENT_TYPE_TEXT_PLAIN, STATE_ON, Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.const import CONTENT_TYPE_TEXT_PLAIN, STATE_OFF, STATE_ON, Platform
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.entity_registry import async_get
+from homeassistant.helpers.event import async_call_later
 from homeassistant.util import slugify
 
-from .const import ALARM_SERVER_PATH, DOMAIN, HIKVISION_EVENT
+from .const import ALARM_SERVER_PATH, DOMAIN, EVENT_AUTO_RESET_TIMEOUT, HIKVISION_EVENT
 from .hikvision_device import HikvisionDevice
 from .isapi import AlertInfo, IPCamera, ISAPIClient
 from .isapi.const import EVENT_IO
 
 _LOGGER = logging.getLogger(__name__)
+
+# Dictionary to track pending auto-reset timers by entity_id
+_pending_resets: dict[str, CALLBACK_TYPE] = {}
+
+
+def cancel_all_pending_resets() -> None:
+    """Cancel all pending auto-reset timers.
+
+    This is useful for cleanup during testing or when unloading the integration.
+    """
+    for cancel_callback in list(_pending_resets.values()):
+        cancel_callback()
+    _pending_resets.clear()
+
 
 CONTENT_TYPE = "Content-Type"
 CONTENT_TYPE_XML = (
@@ -186,6 +202,7 @@ class EventNotificationsView(HomeAssistantView):
             if entity:
                 self.hass.states.async_set(entity_id, STATE_ON, entity.attributes)
                 self.fire_hass_event(alert)
+                self.schedule_auto_reset(entity_id, entity.attributes)
             return
         raise ValueError(f"Entity not found {entity_id}")
 
@@ -208,4 +225,41 @@ class EventNotificationsView(HomeAssistantView):
         self.hass.bus.fire(
             HIKVISION_EVENT,
             message,
+        )
+
+    def schedule_auto_reset(self, entity_id: str, attributes: dict) -> None:
+        """Schedule auto-reset of sensor state after timeout.
+
+        If an event notification is received and no subsequent events arrive within
+        EVENT_AUTO_RESET_TIMEOUT seconds, the sensor will automatically reset to OFF.
+        This prevents sensors from getting "stuck" in the ON state if the "inactive"
+        event packet is dropped.
+        """
+
+        # Cancel any existing pending reset for this entity
+        if entity_id in _pending_resets:
+            _pending_resets[entity_id]()
+            _LOGGER.debug("Cancelled existing auto-reset timer for %s", entity_id)
+
+        @callback
+        def reset_sensor(_now) -> None:
+            """Reset sensor to OFF state."""
+            _LOGGER.debug("Auto-reset timer expired for %s, resetting to OFF", entity_id)
+            entity = self.hass.states.get(entity_id)
+            if entity and entity.state == STATE_ON:
+                self.hass.states.async_set(entity_id, STATE_OFF, attributes)
+            # Clean up the pending reset entry
+            _pending_resets.pop(entity_id, None)
+
+        # Schedule the auto-reset
+        cancel_callback = async_call_later(
+            self.hass,
+            timedelta(seconds=EVENT_AUTO_RESET_TIMEOUT),
+            reset_sensor,
+        )
+        _pending_resets[entity_id] = cancel_callback
+        _LOGGER.debug(
+            "Scheduled auto-reset timer for %s in %s seconds",
+            entity_id,
+            EVENT_AUTO_RESET_TIMEOUT,
         )
