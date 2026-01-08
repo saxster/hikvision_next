@@ -129,10 +129,3 @@ class LicensePlateSensor(SensorEntity):
         self._attr_translation_key = "license_plate"
         self._attr_native_value = None
         self._attr_extra_state_attributes = {}
-
-    def update_license_plate(self, license_plate: str, extra_attrs: dict | None = None) -> None:
-        """Update the license plate value from an ANPR event."""
-        self._attr_native_value = license_plate
-        if extra_attrs:
-            self._attr_extra_state_attributes = extra_attrs
-        self.async_write_ha_state()
