@@ -40,6 +40,7 @@ from .models import (
     ISAPIDeviceInfo,
     MutexIssue,
     ProtocolsInfo,
+    PTZPresetInfo,
     StorageInfo,
 )
 from .utils import bool_to_str, deep_get, parse_isapi_response, str_to_bool
@@ -113,6 +114,7 @@ class ISAPIClient:
         self.capabilities.input_ports = int(deep_get(capabilities, "SysCap.IOCap.IOInputPortNums", 0))
         self.capabilities.output_ports = int(deep_get(capabilities, "SysCap.IOCap.IOOutputPortNums", 0))
         self.capabilities.support_alarm_server = bool(await self.get_alarm_server())
+        self.capabilities.support_ptz = bool(deep_get(capabilities, "PTZCtrlCap", {}))
 
         # Set if NVR based on whether more than 1 supported IP or analog cameras
         # Single IP camera will show 0 supported devices in total
@@ -159,6 +161,7 @@ class ISAPIClient:
                     connection_type=CONNECTION_TYPE_DIRECT,
                     ip_addr=self.device_info.ip_address,
                     streams=await self.get_camera_streams(channel_id),
+                    support_ptz=await self.get_ptz_support(channel_id),
                 )
                 self.cameras.append(camera)
         else:
@@ -193,6 +196,7 @@ class ISAPIClient:
                             ip_addr=source.get("ipAddress"),
                             ip_port=source.get("managePortNo"),
                             streams=await self.get_camera_streams(camera_id),
+                            support_ptz=await self.get_ptz_support(camera_id),
                         )
                     )
 
@@ -217,6 +221,7 @@ class ISAPIClient:
                             input_port=int(analog_camera.get("inputPort")),
                             connection_type=CONNECTION_TYPE_DIRECT,
                             streams=await self.get_camera_streams(camera_id),
+                            support_ptz=await self.get_ptz_support(camera_id),
                         )
                     )
 
@@ -648,6 +653,71 @@ class ISAPIClient:
     async def reboot(self):
         """Reboot device."""
         await self.request(PUT, "System/reboot", present="xml")
+
+    async def get_ptz_support(self, channel_id: int) -> bool:
+        """Check if PTZ is supported for a given channel."""
+        if not self.capabilities.support_ptz:
+            return False
+        with suppress(Exception):
+            response = await self.request(GET, f"PTZCtrl/channels/{channel_id}/capabilities")
+            if response:
+                return True
+        return False
+
+    async def get_ptz_presets(self, channel_id: int) -> list[PTZPresetInfo]:
+        """Get PTZ presets for a given channel."""
+        presets = []
+        with suppress(Exception):
+            response = await self.request(GET, f"PTZCtrl/channels/{channel_id}/presets")
+            preset_list = deep_get(response, "PTZPresetList.PTZPreset", [])
+            if not isinstance(preset_list, list):
+                preset_list = [preset_list]
+            for preset in preset_list:
+                preset_id = int(preset.get("id", 0))
+                preset_name = preset.get("presetName", "")
+                enabled = str_to_bool(preset.get("enabled", "true"))
+                if preset_id and preset_name:
+                    presets.append(PTZPresetInfo(id=preset_id, name=preset_name, enabled=enabled))
+        return presets
+
+    async def ptz_move(
+        self,
+        channel_id: int,
+        pan: int = 0,
+        tilt: int = 0,
+        zoom: int = 0,
+    ) -> None:
+        """Move PTZ camera continuously.
+
+        Args:
+            channel_id: Channel ID for the camera
+            pan: Pan speed (-100 to 100, negative=left, positive=right, 0=stop)
+            tilt: Tilt speed (-100 to 100, negative=down, positive=up, 0=stop)
+            zoom: Zoom speed (-100 to 100, negative=wide, positive=tele, 0=stop)
+        """
+        data = {
+            "PTZData": {
+                "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+                "pan": str(pan),
+                "tilt": str(tilt),
+                "zoom": str(zoom),
+            }
+        }
+        xml = xmltodict.unparse(data)
+        await self.request(PUT, f"PTZCtrl/channels/{channel_id}/continuous", present="xml", data=xml)
+
+    async def ptz_stop(self, channel_id: int) -> None:
+        """Stop PTZ camera movement."""
+        await self.ptz_move(channel_id, pan=0, tilt=0, zoom=0)
+
+    async def ptz_goto_preset(self, channel_id: int, preset_id: int) -> None:
+        """Move PTZ camera to a preset position.
+
+        Args:
+            channel_id: Channel ID for the camera
+            preset_id: ID of the preset to go to
+        """
+        await self.request(PUT, f"PTZCtrl/channels/{channel_id}/presets/{preset_id}/goto", present="xml")
 
     @staticmethod
     def parse_event_notification(xml: str) -> AlertInfo:

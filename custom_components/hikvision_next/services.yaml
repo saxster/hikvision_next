@@ -62,3 +62,87 @@ isapi_request:
       selector:
         text:
           multiline: true
+
+ptz_move:
+  name: PTZ Move
+  description: "Move a PTZ camera continuously. Pan, tilt, and zoom values control the speed and direction of movement. Set all values to 0 to stop movement."
+  fields:
+    config_entry_id:
+      required: true
+      name: "Device"
+      description: "The Hikvision device."
+      selector:
+        config_entry:
+          integration: hikvision_next
+    channel_id:
+      required: true
+      name: "Channel ID"
+      description: "The channel ID of the camera. Usually 1 for single cameras."
+      example: 1
+      selector:
+        number:
+          min: 1
+          max: 64
+          mode: box
+    pan:
+      required: false
+      name: "Pan speed"
+      description: "Pan speed from -100 (left) to 100 (right). 0 to stop."
+      default: 0
+      selector:
+        number:
+          min: -100
+          max: 100
+          mode: slider
+    tilt:
+      required: false
+      name: "Tilt speed"
+      description: "Tilt speed from -100 (down) to 100 (up). 0 to stop."
+      default: 0
+      selector:
+        number:
+          min: -100
+          max: 100
+          mode: slider
+    zoom:
+      required: false
+      name: "Zoom speed"
+      description: "Zoom speed from -100 (wide) to 100 (tele). 0 to stop."
+      default: 0
+      selector:
+        number:
+          min: -100
+          max: 100
+          mode: slider
+
+ptz_preset:
+  name: PTZ Go to Preset
+  description: "Move a PTZ camera to a saved preset position."
+  fields:
+    config_entry_id:
+      required: true
+      name: "Device"
+      description: "The Hikvision device."
+      selector:
+        config_entry:
+          integration: hikvision_next
+    channel_id:
+      required: true
+      name: "Channel ID"
+      description: "The channel ID of the camera. Usually 1 for single cameras."
+      example: 1
+      selector:
+        number:
+          min: 1
+          max: 64
+          mode: box
+    preset_id:
+      required: true
+      name: "Preset ID"
+      description: "The ID of the preset position to move to (typically 1-256)."
+      example: 1
+      selector:
+        number:
+          min: 1
+          max: 256
+          mode: box
