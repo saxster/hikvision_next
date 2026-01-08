@@ -463,7 +463,7 @@ class ISAPIClient:
         channels = []
         try:
             data = await self.request(GET, "System/TwoWayAudio/channels")
-        except Exception:
+        except (HTTPStatusError, httpx.RequestError, ISAPIForbiddenError, ISAPIUnauthorizedError):
             # Two-way audio not supported on this device
             return channels
 
@@ -594,12 +594,11 @@ class ISAPIClient:
         Returns:
             RTSP URL with backchannel parameter for two-way audio
         """
-        from urllib.parse import quote
         u = quote(self.username, safe="")
         p = quote(self.password, safe="")
         stream_id = f"{channel_id}01"  # e.g., channel 1 -> stream 101
         url = f"{self.device_info.ip_address}:{self.protocols.rtsp_port}/Streaming/channels/{stream_id}"
-        # The #backchannel=0 parameter enables two-way audio in compatible players
+        # The ?backchannel=0 query parameter enables two-way audio in compatible players
         return f"rtsp://{u}:{p}@{url}?backchannel=0"
 
     def _get_event_state_node(self, event: EventInfo) -> str:

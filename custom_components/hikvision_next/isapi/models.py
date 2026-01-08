@@ -106,7 +106,7 @@ class CapabilitiesInfo:
     input_ports: int = 0
     output_ports: int = 0
     support_two_way_audio: bool = False
-    two_way_audio_channels: list = field(default_factory=list)  # list of TwoWayAudioInfo
+    two_way_audio_channels: list["TwoWayAudioInfo"] = field(default_factory=list)
 
 
 @dataclass
