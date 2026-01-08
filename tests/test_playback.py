@@ -2,6 +2,7 @@
 
 import pytest
 import respx
+from httpx import HTTPStatusError
 from custom_components.hikvision_next.isapi import (
     RecordingSearchResult,
     PlaybackSession,
@@ -281,8 +282,8 @@ async def test_search_recordings_server_error(mock_isapi):
 
     mock_search_endpoint(status_code=500)
 
-    # This should raise an exception on server error
-    with pytest.raises(Exception):
+    # This should raise an HTTPStatusError on server error
+    with pytest.raises(HTTPStatusError):
         await isapi.search_recordings(
             channel_id=1,
             start_time="2024-01-15T00:00:00Z",
