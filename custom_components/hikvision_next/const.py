@@ -4,7 +4,11 @@ from typing import Final
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 
-from .isapi.const import EVENTS as ISAPI_EVENTS
+from .isapi.const import (
+    DETECTION_TARGET_HUMAN,
+    DETECTION_TARGET_VEHICLE,
+    EVENTS as ISAPI_EVENTS,
+)
 
 DOMAIN: Final = "hikvision_next"
 
@@ -23,6 +27,12 @@ ACTION_ISAPI_REQUEST = "isapi_request"
 ACTION_UPDATE_SNAPSHOT = "update_snapshot"
 
 HIKVISION_EVENT = f"{DOMAIN}_event"
+
+# Device classes for detection targets
+DETECTION_TARGET_DEVICE_CLASS = {
+    DETECTION_TARGET_HUMAN: BinarySensorDeviceClass.MOTION,
+    DETECTION_TARGET_VEHICLE: BinarySensorDeviceClass.MOTION,
+}
 
 EVENTS = {
     "motiondetection": {
