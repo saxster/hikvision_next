@@ -105,6 +105,8 @@ class CapabilitiesInfo:
     support_event_mutex_checking: bool = False
     input_ports: int = 0
     output_ports: int = 0
+    support_two_way_audio: bool = False
+    two_way_audio_channels: list = field(default_factory=list)  # list of TwoWayAudioInfo
 
 
 @dataclass
@@ -135,3 +137,15 @@ class ProtocolsInfo:
     """Holds info of supported protocols."""
 
     rtsp_port: int = 554
+
+
+@dataclass
+class TwoWayAudioInfo:
+    """Holds info for two-way audio channel."""
+
+    id: int
+    enabled: bool
+    audio_compression_type: str = "G.711ulaw"
+    audio_input_type: str = "MicIn"
+    speaker_volume: int = 50
+    noisereduce: bool = False

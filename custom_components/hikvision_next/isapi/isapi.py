@@ -41,6 +41,7 @@ from .models import (
     MutexIssue,
     ProtocolsInfo,
     StorageInfo,
+    TwoWayAudioInfo,
 )
 from .utils import bool_to_str, deep_get, parse_isapi_response, str_to_bool
 
@@ -127,6 +128,9 @@ class ISAPIClient:
 
         with suppress(Exception):
             self.storage = await self.get_storage_devices()
+
+        with suppress(Exception):
+            await self.get_two_way_audio_channels()
 
     async def get_cameras(self):
         """Get camera objects for all connected cameras."""
@@ -453,6 +457,150 @@ class ISAPIClient:
         except IndexError:
             # Storage id does not exist
             return None
+
+    async def get_two_way_audio_channels(self) -> list[TwoWayAudioInfo]:
+        """Get two-way audio channels for the device."""
+        channels = []
+        try:
+            data = await self.request(GET, "System/TwoWayAudio/channels")
+        except Exception:
+            # Two-way audio not supported on this device
+            return channels
+
+        channel_list = deep_get(data, "TwoWayAudioChannelList.TwoWayAudioChannel", [])
+
+        if not isinstance(channel_list, list):
+            channel_list = [channel_list]
+
+        for channel in channel_list:
+            if channel:
+                channels.append(
+                    TwoWayAudioInfo(
+                        id=int(channel.get("id", 1)),
+                        enabled=str_to_bool(channel.get("enabled", "false")),
+                        audio_compression_type=channel.get("audioCompressionType", "G.711ulaw"),
+                        audio_input_type=channel.get("audioInputType", "MicIn"),
+                        speaker_volume=int(channel.get("speakerVolume", 50)),
+                        noisereduce=str_to_bool(channel.get("noisereduce", "false")),
+                    )
+                )
+
+        if channels:
+            self.capabilities.support_two_way_audio = True
+            self.capabilities.two_way_audio_channels = channels
+
+        return channels
+
+    def get_two_way_audio_channel(self, channel_id: int = 1) -> TwoWayAudioInfo | None:
+        """Get two-way audio channel by ID."""
+        for channel in self.capabilities.two_way_audio_channels:
+            if channel.id == channel_id:
+                return channel
+        return None
+
+    async def open_two_way_audio(self, channel_id: int = 1) -> bool:
+        """Open a two-way audio session on specified channel.
+
+        Args:
+            channel_id: The audio channel ID to open (default: 1)
+
+        Returns:
+            True if session was opened successfully, False otherwise
+        """
+        if not self.capabilities.support_two_way_audio:
+            _LOGGER.warning("Two-way audio not supported on this device")
+            return False
+
+        try:
+            await self.request(PUT, f"System/TwoWayAudio/channels/{channel_id}/open")
+            _LOGGER.debug("Opened two-way audio channel %s", channel_id)
+            return True
+        except Exception as ex:
+            _LOGGER.warning("Failed to open two-way audio channel %s: %s", channel_id, ex)
+            return False
+
+    async def close_two_way_audio(self, channel_id: int = 1) -> bool:
+        """Close a two-way audio session on specified channel.
+
+        Args:
+            channel_id: The audio channel ID to close (default: 1)
+
+        Returns:
+            True if session was closed successfully, False otherwise
+        """
+        if not self.capabilities.support_two_way_audio:
+            _LOGGER.warning("Two-way audio not supported on this device")
+            return False
+
+        try:
+            await self.request(PUT, f"System/TwoWayAudio/channels/{channel_id}/close")
+            _LOGGER.debug("Closed two-way audio channel %s", channel_id)
+            return True
+        except Exception as ex:
+            _LOGGER.warning("Failed to close two-way audio channel %s: %s", channel_id, ex)
+            return False
+
+    async def send_audio_data(self, audio_data: bytes, channel_id: int = 1) -> bool:
+        """Send audio data to the camera's speaker.
+
+        This sends raw audio data (typically G.711 ulaw format) to the camera
+        for two-way audio communication.
+
+        Args:
+            audio_data: Raw audio data bytes (G.711 ulaw format recommended)
+            channel_id: The audio channel ID to send data to (default: 1)
+
+        Returns:
+            True if audio data was sent successfully, False otherwise
+        """
+        if not self.capabilities.support_two_way_audio:
+            _LOGGER.warning("Two-way audio not supported on this device")
+            return False
+
+        if not audio_data:
+            _LOGGER.warning("No audio data provided")
+            return False
+
+        try:
+            url = f"System/TwoWayAudio/channels/{channel_id}/audioData"
+            full_url = self.get_isapi_url(url)
+            if not self._auth_method:
+                await self._detect_auth_method()
+
+            response = await self._session.request(
+                PUT,
+                full_url,
+                auth=self._auth_method,
+                content=audio_data,
+                headers={"Content-Type": "application/octet-stream"},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            _LOGGER.debug("Sent %d bytes of audio data to channel %s", len(audio_data), channel_id)
+            return True
+        except Exception as ex:
+            _LOGGER.warning("Failed to send audio data to channel %s: %s", channel_id, ex)
+            return False
+
+    def get_two_way_audio_url(self, channel_id: int = 1) -> str:
+        """Get the URL for two-way audio streaming.
+
+        This returns the RTSP URL with backchannel support for two-way audio.
+        Can be used with go2rtc or other streaming solutions.
+
+        Args:
+            channel_id: The audio channel ID (default: 1)
+
+        Returns:
+            RTSP URL with backchannel parameter for two-way audio
+        """
+        from urllib.parse import quote
+        u = quote(self.username, safe="")
+        p = quote(self.password, safe="")
+        stream_id = f"{channel_id}01"  # e.g., channel 1 -> stream 101
+        url = f"{self.device_info.ip_address}:{self.protocols.rtsp_port}/Streaming/channels/{stream_id}"
+        # The #backchannel=0 parameter enables two-way audio in compatible players
+        return f"rtsp://{u}:{p}@{url}?backchannel=0"
 
     def _get_event_state_node(self, event: EventInfo) -> str:
         """Get xml key for event state."""
