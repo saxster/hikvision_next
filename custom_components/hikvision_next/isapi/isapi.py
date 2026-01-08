@@ -649,6 +649,35 @@ class ISAPIClient:
         """Reboot device."""
         await self.request(PUT, "System/reboot", present="xml")
 
+    async def ptz_goto_preset(self, channel_id: int, preset_id: int):
+        """Move PTZ camera to a preset position.
+
+        Args:
+            channel_id: Camera channel ID (usually 1 for standalone cameras, 101+ for NVR).
+            preset_id: Preset position number to move to.
+        """
+        url = f"PTZCtrl/channels/{channel_id}/presets/{preset_id}/goto"
+        await self.request(PUT, url, present="xml")
+
+    async def ptz_set_patrol(self, channel_id: int, patrol_id: int, enabled: bool):
+        """Start or stop a PTZ patrol.
+
+        Args:
+            channel_id: Camera channel ID (usually 1 for standalone cameras, 101+ for NVR).
+            patrol_id: Patrol ID to control.
+            enabled: True to start patrol, False to stop.
+        """
+        url = f"PTZCtrl/channels/{channel_id}/patrols/{patrol_id}/status"
+        status = "start" if enabled else "stop"
+        data = {
+            "PTZPatrolStatus": {
+                "enabled": "true" if enabled else "false",
+                "status": status,
+            }
+        }
+        xml = xmltodict.unparse(data)
+        await self.request(PUT, url, present="xml", data=xml)
+
     @staticmethod
     def parse_event_notification(xml: str) -> AlertInfo:
         """Parse incoming EventNotificationAlert XML message."""

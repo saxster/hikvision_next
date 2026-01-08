@@ -62,3 +62,74 @@ isapi_request:
       selector:
         text:
           multiline: true
+
+ptz_goto_preset:
+  name: PTZ Go to Preset
+  description: "Move PTZ camera to a preset position. The preset must be configured on the camera first."
+  fields:
+    config_entry_id:
+      required: true
+      name: "Device"
+      description: "The Hikvision device. Permission needed - Remote: PTZ Control"
+      selector:
+        config_entry:
+          integration: hikvision_next
+    channel_id:
+      required: true
+      name: "Channel ID"
+      description: "Camera channel ID. Use 1 for standalone cameras, or the NVR channel number (e.g., 1, 2, 3 for NVR channels)."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 999
+          mode: box
+    preset_id:
+      required: true
+      name: "Preset ID"
+      description: "The preset number to move to (1-300). Must be configured on the camera."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 300
+          mode: box
+
+ptz_set_patrol:
+  name: PTZ Set Patrol
+  description: "Start or stop a PTZ patrol. The patrol must be configured on the camera first."
+  fields:
+    config_entry_id:
+      required: true
+      name: "Device"
+      description: "The Hikvision device. Permission needed - Remote: PTZ Control"
+      selector:
+        config_entry:
+          integration: hikvision_next
+    channel_id:
+      required: true
+      name: "Channel ID"
+      description: "Camera channel ID. Use 1 for standalone cameras, or the NVR channel number (e.g., 1, 2, 3 for NVR channels)."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 999
+          mode: box
+    patrol_id:
+      required: true
+      name: "Patrol ID"
+      description: "The patrol number to start or stop (1-8). Must be configured on the camera."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 8
+          mode: box
+    enabled:
+      required: true
+      name: "Enabled"
+      description: "True to start the patrol, false to stop it."
+      default: true
+      selector:
+        boolean:
