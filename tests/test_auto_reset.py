@@ -20,8 +20,9 @@ from pytest_homeassistant_custom_component.common import (
 from custom_components.hikvision_next.const import EVENT_AUTO_RESET_TIMEOUT, RTSP_PORT_FORCED
 from custom_components.hikvision_next.notifications import (
     EventNotificationsView,
-    _pending_resets,
     cancel_all_pending_resets,
+    get_pending_resets_count,
+    has_pending_reset,
 )
 from tests.conftest import TEST_CONFIG, TEST_CONFIG_OUTSIDE_NETWORK, TEST_HOST_IP, load_fixture
 
@@ -70,7 +71,7 @@ async def test_sensor_auto_resets_after_timeout(
     assert sensor.state == STATE_ON
 
     # A pending reset should be scheduled
-    assert entity_id in _pending_resets
+    assert has_pending_reset(entity_id)
 
     # Advance time past the auto-reset timeout
     freezer.tick(timedelta(seconds=EVENT_AUTO_RESET_TIMEOUT + 1))
@@ -82,7 +83,7 @@ async def test_sensor_auto_resets_after_timeout(
     assert sensor.state == STATE_OFF
 
     # Pending reset should be cleaned up
-    assert entity_id not in _pending_resets
+    assert not has_pending_reset(entity_id)
 
 
 @pytest.mark.parametrize("init_integration", ["DS-7608NXI-I2"], indirect=True)
@@ -106,7 +107,7 @@ async def test_sensor_stays_on_immediately_after_trigger(
     assert sensor.state == STATE_ON
 
     # A pending reset should be scheduled
-    assert entity_id in _pending_resets
+    assert has_pending_reset(entity_id)
 
     # Wait for the event loop to process
     await hass.async_block_till_done()
@@ -137,21 +138,16 @@ async def test_new_event_resets_timeout(
     assert (sensor := hass.states.get(entity_id))
     assert sensor.state == STATE_ON
 
-    # Get the first pending reset callback
-    first_callback = _pending_resets.get(entity_id)
-    assert first_callback is not None
+    # Verify a pending reset is scheduled
+    assert has_pending_reset(entity_id)
 
     # Trigger another event (this should reset the timeout)
     mock_request = mock_event_notification("nvr_2_fielddetection")
     await view.post(mock_request)
 
-    # The pending reset callback should be different (new timer scheduled)
-    second_callback = _pending_resets.get(entity_id)
-    assert second_callback is not None
-    # The callback should be a new one (old one was cancelled and replaced)
-    # Note: We can't directly compare the callbacks, but we verify the entity
-    # is still tracked and a reset is pending
-    assert entity_id in _pending_resets
+    # The entity should still have a pending reset (the old one was cancelled
+    # and a new one was scheduled)
+    assert has_pending_reset(entity_id)
 
     # Sensor should still be ON
     assert (sensor := hass.states.get(entity_id))
@@ -207,7 +203,7 @@ async def test_multiple_sensors_have_independent_timeouts(
     assert sensor_cam.state == STATE_OFF
 
     # Both sensors should have pending resets
-    assert entity_nvr_id in _pending_resets
+    assert has_pending_reset(entity_nvr_id)
 
     # Trigger the camera sensor
     mock_request = mock_event_notification("cam3_DS-2CD2T86G2-ISU_io_notification")
@@ -219,8 +215,8 @@ async def test_multiple_sensors_have_independent_timeouts(
     assert sensor_cam.state == STATE_ON
 
     # Both sensors should have pending resets
-    assert entity_nvr_id in _pending_resets
-    assert entity_cam_id in _pending_resets
+    assert has_pending_reset(entity_nvr_id)
+    assert has_pending_reset(entity_cam_id)
 
     # Advance time past the timeout for both sensors
     freezer.tick(timedelta(seconds=EVENT_AUTO_RESET_TIMEOUT + 1))
@@ -234,8 +230,8 @@ async def test_multiple_sensors_have_independent_timeouts(
     assert sensor_cam.state == STATE_OFF
 
     # Both pending resets should be cleaned up
-    assert entity_nvr_id not in _pending_resets
-    assert entity_cam_id not in _pending_resets
+    assert not has_pending_reset(entity_nvr_id)
+    assert not has_pending_reset(entity_cam_id)
 
 
 @pytest.mark.parametrize("init_integration", ["DS-2CD2443G0-IW"], indirect=True)
@@ -260,7 +256,7 @@ async def test_pir_sensor_auto_reset(
     assert sensor.state == STATE_ON
 
     # A pending reset should be scheduled
-    assert entity_id in _pending_resets
+    assert has_pending_reset(entity_id)
 
     # Advance time past the auto-reset timeout
     freezer.tick(timedelta(seconds=EVENT_AUTO_RESET_TIMEOUT + 1))
@@ -272,19 +268,29 @@ async def test_pir_sensor_auto_reset(
     assert sensor.state == STATE_OFF
 
 
-def test_cancel_all_pending_resets() -> None:
+@pytest.mark.parametrize("init_integration", ["DS-7608NXI-I2"], indirect=True)
+async def test_cancel_all_pending_resets(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+) -> None:
     """Test that cancel_all_pending_resets clears all pending timers."""
-    # Add some mock pending resets
-    _pending_resets["test_entity_1"] = lambda: None
-    _pending_resets["test_entity_2"] = lambda: None
+    entity_id = "binary_sensor.ds_7608nxi_i0_0p_s0000000000ccrrj00000000wcvu_2_fielddetection"
 
-    assert len(_pending_resets) == 2
+    # Trigger the sensor to create a pending reset
+    view = EventNotificationsView(hass)
+    mock_request = mock_event_notification("nvr_2_fielddetection")
+    await view.post(mock_request)
 
-    # Cancel all
+    # Verify a pending reset exists
+    assert has_pending_reset(entity_id)
+    assert get_pending_resets_count() >= 1
+
+    # Cancel all pending resets
     cancel_all_pending_resets()
 
     # Should be empty
-    assert len(_pending_resets) == 0
+    assert get_pending_resets_count() == 0
+    assert not has_pending_reset(entity_id)
 
 
 @pytest.mark.parametrize("init_integration", ["DS-7608NXI-I2"], indirect=True)
@@ -350,7 +356,7 @@ async def test_rapid_fire_events_only_one_pending_reset(
     assert sensor.state == STATE_ON
 
     # There should only be one pending reset (the most recent one)
-    assert entity_id in _pending_resets
+    assert has_pending_reset(entity_id)
 
     # Advance time past the timeout
     freezer.tick(timedelta(seconds=EVENT_AUTO_RESET_TIMEOUT + 1))
@@ -362,4 +368,4 @@ async def test_rapid_fire_events_only_one_pending_reset(
     assert sensor.state == STATE_OFF
 
     # Pending reset should be cleaned up
-    assert entity_id not in _pending_resets
+    assert not has_pending_reset(entity_id)

@@ -26,7 +26,9 @@ from .isapi.const import EVENT_IO
 
 _LOGGER = logging.getLogger(__name__)
 
-# Dictionary to track pending auto-reset timers by entity_id
+# Dictionary to track pending auto-reset timers by entity_id.
+# This is module-level because there's only one EventNotificationsView instance
+# registered per Home Assistant instance, and timers need to persist across HTTP requests.
 _pending_resets: dict[str, CALLBACK_TYPE] = {}
 
 
@@ -38,6 +40,23 @@ def cancel_all_pending_resets() -> None:
     for cancel_callback in list(_pending_resets.values()):
         cancel_callback()
     _pending_resets.clear()
+
+
+def has_pending_reset(entity_id: str) -> bool:
+    """Check if an entity has a pending auto-reset timer.
+
+    This is primarily useful for testing to verify that timers are properly
+    scheduled and cleaned up.
+    """
+    return entity_id in _pending_resets
+
+
+def get_pending_resets_count() -> int:
+    """Get the number of pending auto-reset timers.
+
+    This is primarily useful for testing.
+    """
+    return len(_pending_resets)
 
 
 CONTENT_TYPE = "Content-Type"
