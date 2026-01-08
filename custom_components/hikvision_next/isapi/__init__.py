@@ -1,4 +1,5 @@
 from .isapi import (  # noqa: F401
+    ISAPIActiveDeterrenceNotSupportedError,
     ISAPIClient,
     ISAPIForbiddenError,
     ISAPISetEventStateMutexError,

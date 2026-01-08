@@ -105,6 +105,11 @@ class CapabilitiesInfo:
     support_event_mutex_checking: bool = False
     input_ports: int = 0
     output_ports: int = 0
+    # Active Deterrence capabilities
+    support_siren: bool = False
+    support_strobe: bool = False
+    support_voice: bool = False
+    audio_outputs: int = 0
 
 
 @dataclass

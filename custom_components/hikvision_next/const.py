@@ -21,6 +21,10 @@ ATTR_CONFIG_ENTRY_ID = "config_entry_id"
 ACTION_REBOOT = "reboot"
 ACTION_ISAPI_REQUEST = "isapi_request"
 ACTION_UPDATE_SNAPSHOT = "update_snapshot"
+# Active Deterrence actions
+ACTION_TRIGGER_SIREN = "trigger_siren"
+ACTION_TRIGGER_STROBE = "trigger_strobe"
+ACTION_PLAY_VOICE = "play_voice"
 
 HIKVISION_EVENT = f"{DOMAIN}_event"
 

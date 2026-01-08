@@ -62,3 +62,142 @@ isapi_request:
       selector:
         text:
           multiline: true
+
+# Active Deterrence services
+trigger_siren:
+  name: Trigger Siren
+  description: "Trigger the siren/audio alarm on compatible Hikvision cameras with Active Deterrence features."
+  fields:
+    config_entry_id:
+      required: true
+      name: "Device"
+      description: "The Hikvision device with siren capability."
+      selector:
+        config_entry:
+          integration: hikvision_next
+    duration:
+      required: false
+      name: "Duration"
+      description: "Duration in seconds (1-300). Default is 10 seconds."
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 300
+          unit_of_measurement: "seconds"
+    audio_id:
+      required: false
+      name: "Audio ID"
+      description: "ID of the audio file to play (1-10 for preset alerts). Default is 1."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 10
+    volume:
+      required: false
+      name: "Volume"
+      description: "Volume level (1-100). Default is 50."
+      default: 50
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+    alarm_times:
+      required: false
+      name: "Alarm Times"
+      description: "Number of times to repeat the alarm (1-10). Default is 1."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 10
+
+trigger_strobe:
+  name: Trigger Strobe
+  description: "Trigger the strobe/white light alarm on compatible Hikvision cameras with Active Deterrence features."
+  fields:
+    config_entry_id:
+      required: true
+      name: "Device"
+      description: "The Hikvision device with strobe capability."
+      selector:
+        config_entry:
+          integration: hikvision_next
+    channel_id:
+      required: false
+      name: "Channel ID"
+      description: "Video channel ID (usually 1 for single camera). Default is 1."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 64
+    duration:
+      required: false
+      name: "Duration"
+      description: "Duration in seconds (1-300). Default is 10 seconds."
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 300
+          unit_of_measurement: "seconds"
+    frequency:
+      required: false
+      name: "Frequency"
+      description: "Strobe flash frequency. Default is medium."
+      default: "medium"
+      selector:
+        select:
+          mode: dropdown
+          options:
+            - label: "Low"
+              value: "low"
+            - label: "Medium"
+              value: "medium"
+            - label: "High"
+              value: "high"
+            - label: "Constant (Solid Light)"
+              value: "constant"
+
+play_voice:
+  name: Play Voice Message
+  description: "Play a pre-recorded voice message on compatible Hikvision cameras with speaker capability."
+  fields:
+    config_entry_id:
+      required: true
+      name: "Device"
+      description: "The Hikvision device with speaker capability."
+      selector:
+        config_entry:
+          integration: hikvision_next
+    audio_id:
+      required: false
+      name: "Audio ID"
+      description: "ID of the pre-recorded voice message (1-10). Default is 1."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 10
+    volume:
+      required: false
+      name: "Volume"
+      description: "Volume level (1-100). Default is 50."
+      default: 50
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+    alarm_times:
+      required: false
+      name: "Repeat"
+      description: "Number of times to play the message (1-10). Default is 1."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 10
