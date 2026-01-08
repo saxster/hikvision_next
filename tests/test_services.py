@@ -222,5 +222,3 @@ async def test_ptz_set_patrol_on_ptz_camera(hass: HomeAssistant, init_integratio
     request_content = endpoint.calls[0].request.content.decode("utf-8")
     assert "<enabled>true</enabled>" in request_content
     assert "<status>start</status>" in request_content
-
-    assert endpoint.called
