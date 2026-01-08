@@ -100,6 +100,37 @@ async def test_ipc_motion_detection_on_thermometry_channel_alert(
     assert sensor.state == STATE_ON
 
 
+@pytest.mark.parametrize("init_integration", ["DS-7608NXI-I2"], indirect=True)
+async def test_anpr_license_plate_alert(
+    hass: HomeAssistant, init_integration: MockConfigEntry,
+) -> None:
+    """Test incoming ANPR (license plate recognition) event alert."""
+
+    entity_id = "sensor.ds_7608nxi_i0_0p_s0000000000ccrrj00000000wcvu_1_license_plate"
+    bus_events = []
+    def bus_event_listener(event: Event) -> None:
+        bus_events.append(event)
+    hass.bus.async_listen(HIKVISION_EVENT, bus_event_listener)
+
+    # Verify sensor exists and starts without a value
+    assert (sensor := hass.states.get(entity_id))
+
+    view = EventNotificationsView(hass)
+    mock_request = mock_event_notification("anpr_license_plate")
+    response = await view.post(mock_request)
+
+    assert response.status == HTTPStatus.OK
+    assert (sensor := hass.states.get(entity_id))
+    assert sensor.state == "AB123CD"
+
+    await hass.async_block_till_done()
+    assert len(bus_events) == 1
+    data = bus_events[0].data
+    assert data["channel_id"] == 1
+    assert data["event_id"] == "anpr"
+    assert data["license_plate"] == "AB123CD"
+
+
 @pytest.mark.parametrize("init_integration", ["DS-2CD2146G2-ISU"], indirect=True)
 async def test_field_detection_alert(
     hass: HomeAssistant, init_integration: MockConfigEntry,

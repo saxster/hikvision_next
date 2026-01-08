@@ -11,6 +11,7 @@ EVENT_BASIC: Final = "basic"
 EVENT_IO: Final = "io"
 EVENT_SMART: Final = "smart"
 EVENT_PIR: Final = "pir"
+EVENT_ANPR: Final = "anpr"
 EVENTS = {
     "motiondetection": {
         "type": EVENT_BASIC,
@@ -68,6 +69,11 @@ EVENTS = {
         "label": "PIR",
         "slug": "WLAlarm/PIR",
         "direct_node": "PIRAlarm",
+    },
+    "anpr": {
+        "type": EVENT_ANPR,
+        "label": "License Plate Recognition",
+        "slug": "ANPR",
     },
 }
 

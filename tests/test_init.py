@@ -51,7 +51,7 @@ async def test_async_setup_entry_nvr(hass: HomeAssistant, init_integration: Mock
     device: HikvisionDevice = entry.runtime_data
     assert device.host == TEST_CONFIG["host"]
     assert len(device.cameras) == 4
-    assert len(device.supported_events) == 63
+    assert len(device.supported_events) == 64
 
     device_info = device.device_info
     capabilities = device.capabilities

@@ -23,6 +23,7 @@ class AlertInfo:
     mac: str = ""
     region_id: int = 0
     detection_target: str = field(default=None)
+    license_plate: str = field(default=None)
 
 
 @dataclass

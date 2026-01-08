@@ -679,7 +679,10 @@ class ISAPIClient:
         detection_target = deep_get(alert, "DetectionRegionList.DetectionRegionEntry.detectionTarget")
         region_id = int(deep_get(alert, "DetectionRegionList.DetectionRegionEntry.regionID", 0))
 
-        if not EVENTS[event_id]:
+        # Extract license plate from ANPR events
+        license_plate = deep_get(alert, "ANPR.licensePlate")
+
+        if not EVENTS.get(event_id):
             raise ValueError(f"Unsupported event {event_id}")
 
         return AlertInfo(
@@ -690,6 +693,7 @@ class ISAPIClient:
             mac,
             region_id,
             detection_target,
+            license_plate,
         )
 
     async def get_camera_image(
