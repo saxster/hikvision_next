@@ -668,7 +668,7 @@ class ISAPIClient:
         if not isinstance(channel_list, list):
             channel_list = [channel_list]
         for channel in channel_list:
-            if channel:
+            if channel is not None and isinstance(channel, dict):
                 channels.append(
                     TwoWayAudioChannelInfo(
                         id=int(channel.get("id", 1)),
