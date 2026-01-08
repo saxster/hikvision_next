@@ -65,4 +65,8 @@ EVENTS = {
         **ISAPI_EVENTS["pir"],
         "device_class": BinarySensorDeviceClass.MOTION,
     },
+    "videointercomevent": {
+        **ISAPI_EVENTS["videointercomevent"],
+        "device_class": BinarySensorDeviceClass.OCCUPANCY,
+    },
 }

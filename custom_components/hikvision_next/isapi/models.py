@@ -103,6 +103,7 @@ class CapabilitiesInfo:
     support_alarm_server: bool = False
     support_channel_zero: bool = False
     support_event_mutex_checking: bool = False
+    support_video_intercom: bool = False  # if device is a video doorbell/intercom
     input_ports: int = 0
     output_ports: int = 0
 

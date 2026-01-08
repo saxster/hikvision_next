@@ -54,6 +54,12 @@
       },
       "io": {
         "name": "Wejście alarmowe {io_port_id}"
+      },
+      "pir": {
+        "name": "PIR"
+      },
+      "videointercomevent": {
+        "name": "Dzwonek"
       }
     },
     "switch": {
