@@ -17,7 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_registry import async_get
 from homeassistant.util import slugify
 
-from .const import ALARM_SERVER_PATH, DOMAIN, HIKVISION_EVENT
+from .const import ALARM_SERVER_PATH, DOMAIN, HIKVISION_EVENT, supports_target_detection
 from .hikvision_device import HikvisionDevice
 from .isapi import AlertInfo, IPCamera, ISAPIClient
 from .isapi.const import EVENT_IO
@@ -175,19 +175,39 @@ class EventNotificationsView(HomeAssistantView):
 
         device_id_param = f"_{alert.channel_id}" if alert.channel_id != 0 and alert.event_id != EVENT_IO else ""
         io_port_id_param = f"_{alert.io_port_id}" if alert.io_port_id != 0 else ""
-        unique_id = f"binary_sensor.{slugify(serial_no)}{device_id_param}{io_port_id_param}_{alert.event_id}"
+        base_unique_id = f"binary_sensor.{slugify(serial_no)}{device_id_param}{io_port_id_param}_{alert.event_id}"
 
-        _LOGGER.debug("UNIQUE_ID: %s", unique_id)
+        _LOGGER.debug("Base UNIQUE_ID: %s", base_unique_id)
 
         entity_registry = async_get(self.hass)
-        entity_id = entity_registry.async_get_entity_id(Platform.BINARY_SENSOR, DOMAIN, unique_id)
-        if entity_id:
-            entity = self.hass.states.get(entity_id)
+        triggered_any = False
+
+        # Trigger the generic sensor
+        generic_entity_id = entity_registry.async_get_entity_id(Platform.BINARY_SENSOR, DOMAIN, base_unique_id)
+        if generic_entity_id:
+            entity = self.hass.states.get(generic_entity_id)
             if entity:
-                self.hass.states.async_set(entity_id, STATE_ON, entity.attributes)
-                self.fire_hass_event(alert)
+                self.hass.states.async_set(generic_entity_id, STATE_ON, entity.attributes)
+                triggered_any = True
+                _LOGGER.debug("Triggered generic sensor: %s", generic_entity_id)
+
+        # Trigger the target-specific sensor if detection_target is present
+        if alert.detection_target and supports_target_detection(alert.event_id):
+            target_unique_id = f"{base_unique_id}_{alert.detection_target}"
+            _LOGGER.debug("Target-specific UNIQUE_ID: %s", target_unique_id)
+            target_entity_id = entity_registry.async_get_entity_id(Platform.BINARY_SENSOR, DOMAIN, target_unique_id)
+            if target_entity_id:
+                entity = self.hass.states.get(target_entity_id)
+                if entity:
+                    self.hass.states.async_set(target_entity_id, STATE_ON, entity.attributes)
+                    triggered_any = True
+                    _LOGGER.debug("Triggered target-specific sensor: %s", target_entity_id)
+
+        if triggered_any:
+            self.fire_hass_event(alert)
             return
-        raise ValueError(f"Entity not found {entity_id}")
+
+        raise ValueError(f"Entity not found {base_unique_id}")
 
     def fire_hass_event(self, alert: AlertInfo):
         """Fire HASS event."""

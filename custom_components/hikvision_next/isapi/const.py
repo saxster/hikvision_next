@@ -11,6 +11,18 @@ EVENT_BASIC: Final = "basic"
 EVENT_IO: Final = "io"
 EVENT_SMART: Final = "smart"
 EVENT_PIR: Final = "pir"
+
+# Detection target types for smart events
+DETECTION_TARGET_HUMAN: Final = "human"
+DETECTION_TARGET_VEHICLE: Final = "vehicle"
+
+# Events that support target-specific detection (person/vehicle)
+EVENTS_WITH_TARGET_DETECTION: Final = frozenset([
+    "fielddetection",
+    "linedetection",
+    "regionentrance",
+    "regionexiting",
+])
 EVENTS = {
     "motiondetection": {
         "type": EVENT_BASIC,

@@ -45,6 +45,7 @@ class EventInfo:
     is_proxy: bool = False  # True if the event comes from device connected via NVR
     disabled: bool = False
     notifications: list[str] = field(default_factory=list)
+    detection_target: str = None  # Target type: "human", "vehicle", or None for generic
 
 
 @dataclass

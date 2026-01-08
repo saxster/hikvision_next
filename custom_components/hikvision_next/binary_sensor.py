@@ -46,7 +46,14 @@ class EventBinarySensor(BinarySensorEntity):
         """Initialize."""
         self.entity_id = ENTITY_ID_FORMAT.format(event.unique_id)
         self._attr_unique_id = self.entity_id
-        self._attr_translation_key = event.id
+        self._detection_target = event.detection_target
+
+        # Set translation key based on whether this is a target-specific event
+        if event.detection_target:
+            self._attr_translation_key = f"{event.id}_{event.detection_target}"
+        else:
+            self._attr_translation_key = event.id
+
         if event.id == EVENT_IO:
             self._attr_translation_placeholders = {"io_port_id": event.io_port_id}
         self._attr_device_class = EVENTS[event.id]["device_class"]
