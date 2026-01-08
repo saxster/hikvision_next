@@ -2,12 +2,8 @@
 
 import pytest
 import respx
-import httpx
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
-from homeassistant.components.select import DOMAIN as SELECT_DOMAIN, SERVICE_SELECT_OPTION
-from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN, SERVICE_TURN_ON, SERVICE_TURN_OFF
-from homeassistant.const import ATTR_ENTITY_ID, STATE_ON, STATE_OFF
 import homeassistant.helpers.entity_registry as er
 from tests.conftest import TEST_HOST
 
