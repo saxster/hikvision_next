@@ -11,6 +11,8 @@ EVENT_BASIC: Final = "basic"
 EVENT_IO: Final = "io"
 EVENT_SMART: Final = "smart"
 EVENT_PIR: Final = "pir"
+EVENT_ANPR: Final = "anpr"
+EVENT_FACE: Final = "face"
 EVENTS = {
     "motiondetection": {
         "type": EVENT_BASIC,
@@ -69,6 +71,16 @@ EVENTS = {
         "slug": "WLAlarm/PIR",
         "direct_node": "PIRAlarm",
     },
+    "vehicledetection": {
+        "type": EVENT_ANPR,
+        "label": "License Plate Recognition",
+        "slug": "ANPR",
+    },
+    "facedetection": {
+        "type": EVENT_FACE,
+        "label": "Face Recognition",
+        "slug": "FaceDetection",
+    },
 }
 
 STREAM_TYPE = {
@@ -84,6 +96,8 @@ EVENTS_ALTERNATE_ID = {
     "thermometry": "motiondetection",
     "shelteralarm": "tamperdetection",
     "VMDHumanVehicle": "motiondetection",
+    "anpr": "vehicledetection",
+    "facerecognition": "facedetection",
 }
 
 MUTEX_ALTERNATE_ID = {"motiondetection": "VMDHumanVehicle"}

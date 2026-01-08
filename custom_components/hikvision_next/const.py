@@ -65,4 +65,12 @@ EVENTS = {
         **ISAPI_EVENTS["pir"],
         "device_class": BinarySensorDeviceClass.MOTION,
     },
+    "vehicledetection": {
+        **ISAPI_EVENTS["vehicledetection"],
+        "device_class": BinarySensorDeviceClass.OCCUPANCY,
+    },
+    "facedetection": {
+        **ISAPI_EVENTS["facedetection"],
+        "device_class": BinarySensorDeviceClass.OCCUPANCY,
+    },
 }

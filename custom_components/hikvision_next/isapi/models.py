@@ -23,6 +23,16 @@ class AlertInfo:
     mac: str = ""
     region_id: int = 0
     detection_target: str = field(default=None)
+    # ANPR (License Plate Recognition) fields
+    license_plate: str = field(default=None)
+    plate_confidence: int = 0
+    plate_color: str = field(default=None)
+    plate_type: str = field(default=None)
+    vehicle_color: str = field(default=None)
+    # Face Recognition fields
+    person_name: str = field(default=None)
+    face_score: int = 0
+    person_id: str = field(default=None)
 
 
 @dataclass
