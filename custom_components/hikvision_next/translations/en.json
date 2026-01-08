@@ -43,14 +43,38 @@
       "fielddetection": {
         "name": "Intrusion"
       },
+      "fielddetection_human": {
+        "name": "Intrusion (Person)"
+      },
+      "fielddetection_vehicle": {
+        "name": "Intrusion (Vehicle)"
+      },
       "linedetection": {
         "name": "Line Crossing"
+      },
+      "linedetection_human": {
+        "name": "Line Crossing (Person)"
+      },
+      "linedetection_vehicle": {
+        "name": "Line Crossing (Vehicle)"
       },
       "regionentrance": {
         "name": "Region Entrance"
       },
+      "regionentrance_human": {
+        "name": "Region Entrance (Person)"
+      },
+      "regionentrance_vehicle": {
+        "name": "Region Entrance (Vehicle)"
+      },
       "regionexiting": {
         "name": "Region Exiting"
+      },
+      "regionexiting_human": {
+        "name": "Region Exiting (Person)"
+      },
+      "regionexiting_vehicle": {
+        "name": "Region Exiting (Vehicle)"
       },
       "io": {
         "name": "Alarm Input {io_port_id}"

@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import HikvisionConfigEntry
-from .const import EVENTS
+from .const import DETECTION_TARGET_DEVICE_CLASS, EVENTS
 from .hikvision_device import HikvisionDevice
 from .isapi import EventInfo
 from .isapi.const import EVENT_IO
@@ -46,9 +46,19 @@ class EventBinarySensor(BinarySensorEntity):
         """Initialize."""
         self.entity_id = ENTITY_ID_FORMAT.format(event.unique_id)
         self._attr_unique_id = self.entity_id
-        self._attr_translation_key = event.id
+
+        # Handle target-specific sensors (person/vehicle detection)
+        if event.detection_target:
+            self._attr_translation_key = f"{event.id}_{event.detection_target}"
+            self._attr_device_class = DETECTION_TARGET_DEVICE_CLASS.get(
+                event.detection_target, EVENTS[event.id]["device_class"]
+            )
+        else:
+            self._attr_translation_key = event.id
+            self._attr_device_class = EVENTS[event.id]["device_class"]
+
         if event.id == EVENT_IO:
             self._attr_translation_placeholders = {"io_port_id": event.io_port_id}
-        self._attr_device_class = EVENTS[event.id]["device_class"]
+
         self._attr_device_info = device.hass_device_info(device_id)
         self._attr_entity_registry_enabled_default = not event.disabled

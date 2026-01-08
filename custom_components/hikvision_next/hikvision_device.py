@@ -31,7 +31,7 @@ from .isapi import (
     ISAPIForbiddenError,
     ISAPIUnauthorizedError,
 )
-from .isapi.const import EVENT_IO
+from .isapi.const import DETECTION_TARGETS, EVENT_IO, EVENTS_WITH_TARGET_DETECTION
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -134,12 +134,28 @@ class HikvisionDevice(ISAPIClient):
             # Build unique_id
             device_id_param = f"_{camera_id}" if camera_id else ""
             io_port_id_param = f"_{event.io_port_id}" if event.io_port_id != 0 else ""
-            unique_id = f"{slugify(self.device_info.serial_no.lower())}{device_id_param}{io_port_id_param}_{event.id}"
+            base_unique_id = f"{slugify(self.device_info.serial_no.lower())}{device_id_param}{io_port_id_param}"
 
             if EVENTS.get(event.id):
-                event.unique_id = unique_id
+                event.unique_id = f"{base_unique_id}_{event.id}"
                 event.disabled = "center" not in event.notifications  # Disable if not set Notify Surveillance Center
                 events.append(event)
+
+                # Add target-specific sensors for smart events that support human/vehicle detection
+                if event.id in EVENTS_WITH_TARGET_DETECTION:
+                    for target in DETECTION_TARGETS:
+                        target_event = EventInfo(
+                            id=event.id,
+                            channel_id=event.channel_id,
+                            io_port_id=event.io_port_id,
+                            unique_id=f"{base_unique_id}_{event.id}_{target}",
+                            url=event.url,
+                            is_proxy=event.is_proxy,
+                            disabled=event.disabled,
+                            notifications=event.notifications.copy(),  # Copy list to avoid shared state
+                            detection_target=target,
+                        )
+                        events.append(target_event)
         return events
 
     def handle_exception(self, ex: Exception, details: str = ""):

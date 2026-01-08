@@ -196,8 +196,11 @@ async def test_ipc_multichannel_event_switch(
     device: HikvisionDevice = init_integration.runtime_data
 
     assert device.capabilities.is_multi_channel
+    # Camera 1 has 2 basic events (motiondetection, tamperdetection) - no target detection
     assert len(device.cameras[0].events_info) == 2
-    assert len(device.cameras[1].events_info) == 4
+    # Camera 2 has 4 smart events (fielddetection, linedetection, regionentrance, regionexiting)
+    # Each smart event creates 3 entities (generic + human + vehicle) = 4 * 3 = 12
+    assert len(device.cameras[1].events_info) == 12
 
     switch_entities = [
         'switch.ds_2se4c425mwg_e_0000000000aawrfc0000000_1_motiondetection',

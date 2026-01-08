@@ -13,5 +13,33 @@
       "insufficient_permission": "[%key:common::config_flow::error::insufficient_permission%]",
       "unknown": "[%key:common::config_flow::error::unknown%]"
     }
+  },
+  "entity": {
+    "binary_sensor": {
+      "fielddetection_human": {
+        "name": "Intrusion (Person)"
+      },
+      "fielddetection_vehicle": {
+        "name": "Intrusion (Vehicle)"
+      },
+      "linedetection_human": {
+        "name": "Line Crossing (Person)"
+      },
+      "linedetection_vehicle": {
+        "name": "Line Crossing (Vehicle)"
+      },
+      "regionentrance_human": {
+        "name": "Region Entrance (Person)"
+      },
+      "regionentrance_vehicle": {
+        "name": "Region Entrance (Vehicle)"
+      },
+      "regionexiting_human": {
+        "name": "Region Exiting (Person)"
+      },
+      "regionexiting_vehicle": {
+        "name": "Region Exiting (Vehicle)"
+      }
+    }
   }
 }
