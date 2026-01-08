@@ -205,6 +205,24 @@ class EventNotificationsView(HomeAssistantView):
             message["detection_target"] = alert.detection_target
             message["region_id"] = alert.region_id
 
+        # ANPR (License Plate Recognition) data
+        if alert.license_plate:
+            message["license_plate"] = alert.license_plate
+            message["plate_confidence"] = alert.plate_confidence
+            if alert.plate_color:
+                message["plate_color"] = alert.plate_color
+            if alert.plate_type:
+                message["plate_type"] = alert.plate_type
+            if alert.vehicle_color:
+                message["vehicle_color"] = alert.vehicle_color
+
+        # Face Recognition data
+        if alert.person_name:
+            message["person_name"] = alert.person_name
+            message["face_score"] = alert.face_score
+            if alert.person_id:
+                message["person_id"] = alert.person_id
+
         self.hass.bus.fire(
             HIKVISION_EVENT,
             message,

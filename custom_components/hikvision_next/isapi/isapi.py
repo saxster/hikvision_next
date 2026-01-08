@@ -679,17 +679,54 @@ class ISAPIClient:
         detection_target = deep_get(alert, "DetectionRegionList.DetectionRegionEntry.detectionTarget")
         region_id = int(deep_get(alert, "DetectionRegionList.DetectionRegionEntry.regionID", 0))
 
-        if not EVENTS[event_id]:
+        # ANPR (License Plate Recognition) data
+        license_plate = None
+        plate_confidence = 0
+        plate_color = None
+        plate_type = None
+        vehicle_color = None
+        anpr_data = alert.get("ANPR")
+        if anpr_data:
+            license_plate = anpr_data.get("licensePlate")
+            plate_confidence = int(anpr_data.get("confidenceLevel", 0))
+            plate_color = anpr_data.get("plateColor")
+            plate_type = anpr_data.get("plateType")
+            vehicle_color = anpr_data.get("vehicleColor")
+
+        # Face Recognition data
+        person_name = None
+        face_score = 0
+        person_id = None
+        # Check for face recognition data in multiple possible locations
+        person_name = alert.get("personName")
+        face_score = int(alert.get("faceScore", 0))
+        person_id = alert.get("personID")
+        # Alternative face recognition data structure
+        face_info = alert.get("FaceRecognition") or alert.get("faceRecognition")
+        if face_info:
+            person_name = person_name or face_info.get("personName") or face_info.get("name")
+            face_score = face_score or int(face_info.get("faceScore", face_info.get("similarity", 0)))
+            person_id = person_id or face_info.get("personID") or face_info.get("FDID")
+
+        if event_id not in EVENTS:
             raise ValueError(f"Unsupported event {event_id}")
 
         return AlertInfo(
-            channel_id,
-            io_port_id,
-            event_id,
-            device_serial,
-            mac,
-            region_id,
-            detection_target,
+            channel_id=channel_id,
+            io_port_id=io_port_id,
+            event_id=event_id,
+            device_serial_no=device_serial,
+            mac=mac,
+            region_id=region_id,
+            detection_target=detection_target,
+            license_plate=license_plate,
+            plate_confidence=plate_confidence,
+            plate_color=plate_color,
+            plate_type=plate_type,
+            vehicle_color=vehicle_color,
+            person_name=person_name,
+            face_score=face_score,
+            person_id=person_id,
         )
 
     async def get_camera_image(
