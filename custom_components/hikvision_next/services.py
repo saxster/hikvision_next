@@ -11,7 +11,14 @@ from homeassistant.core import (
 )
 from homeassistant.exceptions import HomeAssistantError
 
-from .const import ACTION_ISAPI_REQUEST, ACTION_REBOOT, ATTR_CONFIG_ENTRY_ID, DOMAIN
+from .const import (
+    ACTION_ISAPI_REQUEST,
+    ACTION_REBOOT,
+    ACTION_START_TWO_WAY_AUDIO,
+    ACTION_STOP_TWO_WAY_AUDIO,
+    ATTR_CONFIG_ENTRY_ID,
+    DOMAIN,
+)
 from .isapi import ISAPIForbiddenError, ISAPIUnauthorizedError
 
 ACTION_ISAPI_REQUEST_SCHEMA = vol.Schema(
@@ -20,6 +27,13 @@ ACTION_ISAPI_REQUEST_SCHEMA = vol.Schema(
         vol.Required("method"): str,
         vol.Required("path"): str,
         vol.Optional("payload"): str,
+    }
+)
+
+ACTION_TWO_WAY_AUDIO_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_CONFIG_ENTRY_ID): str,
+        vol.Optional("channel_id", default=1): int,
     }
 )
 
@@ -54,6 +68,36 @@ def setup_services(hass: HomeAssistant) -> None:
                 response = ex.response.content
         return {"data": response.replace("\r", "")}
 
+    async def handle_start_two_way_audio(call: ServiceCall):
+        """Handle the start two-way audio action call."""
+        entry_id = call.data.get(ATTR_CONFIG_ENTRY_ID)
+        entry = hass.config_entries.async_get_entry(entry_id)
+        device = entry.runtime_data
+        channel_id = call.data.get("channel_id", 1)
+
+        if not device.capabilities.support_two_way_audio:
+            raise HomeAssistantError("Device does not support two-way audio")
+
+        try:
+            await device.start_two_way_audio(channel_id)
+        except (HTTPStatusError, ISAPIForbiddenError, ISAPIUnauthorizedError) as ex:
+            raise HomeAssistantError(ex.response.content) from ex
+
+    async def handle_stop_two_way_audio(call: ServiceCall):
+        """Handle the stop two-way audio action call."""
+        entry_id = call.data.get(ATTR_CONFIG_ENTRY_ID)
+        entry = hass.config_entries.async_get_entry(entry_id)
+        device = entry.runtime_data
+        channel_id = call.data.get("channel_id", 1)
+
+        if not device.capabilities.support_two_way_audio:
+            raise HomeAssistantError("Device does not support two-way audio")
+
+        try:
+            await device.stop_two_way_audio(channel_id)
+        except (HTTPStatusError, ISAPIForbiddenError, ISAPIUnauthorizedError) as ex:
+            raise HomeAssistantError(ex.response.content) from ex
+
     hass.services.async_register(
         DOMAIN,
         ACTION_REBOOT,
@@ -65,4 +109,16 @@ def setup_services(hass: HomeAssistant) -> None:
         handle_isapi_request,
         schema=ACTION_ISAPI_REQUEST_SCHEMA,
         supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        ACTION_START_TWO_WAY_AUDIO,
+        handle_start_two_way_audio,
+        schema=ACTION_TWO_WAY_AUDIO_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        ACTION_STOP_TWO_WAY_AUDIO,
+        handle_stop_two_way_audio,
+        schema=ACTION_TWO_WAY_AUDIO_SCHEMA,
     )

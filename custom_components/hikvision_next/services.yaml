@@ -62,3 +62,47 @@ isapi_request:
       selector:
         text:
           multiline: true
+
+start_two_way_audio:
+  name: Start two-way audio
+  description: "Open a two-way audio session on the device. This signals the device to start listening for audio input. Useful for doorbells and cameras with speaker support."
+  fields:
+    config_entry_id:
+      required: true
+      name: "Device"
+      description: "The Hikvision device with two-way audio support."
+      selector:
+        config_entry:
+          integration: hikvision_next
+    channel_id:
+      required: false
+      name: "Channel ID"
+      description: "The two-way audio channel ID. Defaults to 1."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 10
+          mode: box
+
+stop_two_way_audio:
+  name: Stop two-way audio
+  description: "Close the two-way audio session on the device."
+  fields:
+    config_entry_id:
+      required: true
+      name: "Device"
+      description: "The Hikvision device with two-way audio support."
+      selector:
+        config_entry:
+          integration: hikvision_next
+    channel_id:
+      required: false
+      name: "Channel ID"
+      description: "The two-way audio channel ID. Defaults to 1."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 10
+          mode: box
