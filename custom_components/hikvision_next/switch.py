@@ -13,7 +13,7 @@ from homeassistant.util import slugify
 
 from . import HikvisionConfigEntry
 from .const import EVENTS_COORDINATOR, HOLIDAY_MODE, SECONDARY_COORDINATOR
-from .isapi import EventInfo, ISAPISetEventStateMutexError
+from .isapi import AnalogCamera, EventInfo, IPCamera, ISAPISetEventStateMutexError, PTZPatrolInfo
 from .isapi.const import EVENT_IO
 
 
@@ -46,6 +46,12 @@ async def async_setup_entry(
     # Holiday mode switch
     if device.capabilities.support_holiday_mode:
         entities.append(HolidaySwitch(secondary_coordinator))
+
+    # PTZ patrol switches for cameras with PTZ support
+    for camera in device.cameras:
+        if camera.ptz_info.is_supported and camera.ptz_info.patrols:
+            for patrol in camera.ptz_info.patrols:
+                entities.append(PTZPatrolSwitch(device, camera, patrol))
 
     async_add_entities(entities)
 
@@ -164,3 +170,53 @@ class HolidaySwitch(CoordinatorEntity, SwitchEntity):
         """Turn off."""
         await self.coordinator.device.set_holiday_enabled_state(False)
         await self.coordinator.async_request_refresh()
+
+
+class PTZPatrolSwitch(SwitchEntity):
+    """PTZ Patrol mode switch."""
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:camera-flip"
+    _attr_translation_key = "ptz_patrol"
+
+    def __init__(self, device, camera: IPCamera | AnalogCamera, patrol: PTZPatrolInfo) -> None:
+        """Initialize."""
+        self._device = device
+        self._camera = camera
+        self._patrol = patrol
+        self._is_on = False
+        self._attr_unique_id = f"{slugify(camera.serial_no.lower())}_{patrol.id}_ptz_patrol"
+        self.entity_id = ENTITY_ID_FORMAT.format(self._attr_unique_id)
+        self._attr_device_info = device.hass_device_info(camera.id)
+        self._attr_translation_placeholders = {"patrol_name": patrol.name}
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return True if the patrol is running."""
+        return self._is_on
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Start patrol."""
+        try:
+            await self._device.start_ptz_patrol(self._camera.id, self._patrol.id)
+            self._is_on = True
+            self.async_write_ha_state()
+        except Exception as ex:
+            raise HomeAssistantError(f"Failed to start patrol: {ex}") from ex
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Stop patrol."""
+        try:
+            await self._device.stop_ptz_patrol(self._camera.id, self._patrol.id)
+            self._is_on = False
+            self.async_write_ha_state()
+        except Exception as ex:
+            raise HomeAssistantError(f"Failed to stop patrol: {ex}") from ex
+
+    async def async_update(self) -> None:
+        """Update patrol status."""
+        try:
+            self._is_on = await self._device.get_ptz_patrol_status(self._camera.id, self._patrol.id)
+        except Exception:
+            # Silently fail - patrol status may not be available
+            pass

@@ -108,6 +108,43 @@ class CapabilitiesInfo:
 
 
 @dataclass
+class ProtocolsInfo:
+    """Holds info of supported protocols."""
+
+    rtsp_port: int = 554
+
+
+@dataclass
+class PTZPresetInfo:
+    """Holds PTZ preset info."""
+
+    id: int
+    name: str
+    enabled: bool = True
+
+
+@dataclass
+class PTZPatrolInfo:
+    """Holds PTZ patrol info."""
+
+    id: int
+    name: str
+    enabled: bool = True
+
+
+@dataclass
+class PTZInfo:
+    """Holds PTZ capabilities and data for a camera."""
+
+    is_supported: bool = False
+    absolute_move: bool = False
+    relative_move: bool = False
+    continuous_move: bool = False
+    presets: list[PTZPresetInfo] = field(default_factory=list)
+    patrols: list[PTZPatrolInfo] = field(default_factory=list)
+
+
+@dataclass
 class AnalogCamera:
     """Analog cameras info."""
 
@@ -119,6 +156,7 @@ class AnalogCamera:
     connection_type: str
     streams: list[CameraStreamInfo] = field(default_factory=list)
     events_info: list[EventInfo] = field(default_factory=list)
+    ptz_info: PTZInfo = field(default_factory=PTZInfo)
 
 
 @dataclass
@@ -128,10 +166,3 @@ class IPCamera(AnalogCamera):
     firmware: str = ""
     ip_addr: str = ""
     ip_port: int = 0
-
-
-@dataclass
-class ProtocolsInfo:
-    """Holds info of supported protocols."""
-
-    rtsp_port: int = 554
