@@ -1,6 +1,5 @@
 "ISAPI client for Home Assistant integration."
 
-import copy
 import logging
 from typing import Any
 

@@ -4,7 +4,7 @@ import pytest
 from http import HTTPStatus
 from homeassistant.core import HomeAssistant, Event
 from custom_components.hikvision_next.notifications import EventNotificationsView
-from custom_components.hikvision_next.const import HIKVISION_EVENT, RTSP_PORT_FORCED
+from custom_components.hikvision_next.const import HIKVISION_EVENT
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from unittest.mock import MagicMock
 from tests.conftest import load_fixture, TEST_HOST_IP, TEST_CONFIG
