@@ -40,6 +40,7 @@ from .models import (
     ISAPIDeviceInfo,
     MutexIssue,
     ProtocolsInfo,
+    RecordingSearchResult,
     StorageInfo,
 )
 from .utils import bool_to_str, deep_get, parse_isapi_response, str_to_bool
@@ -736,6 +737,268 @@ class ISAPIClient:
         p = quote(self.password, safe="")
         url = f"{self.device_info.ip_address}:{self.protocols.rtsp_port}/Streaming/channels/{stream.id}"
         return f"rtsp://{u}:{p}@{url}"
+
+    async def search_recordings(
+        self,
+        channel_id: int,
+        start_time: str,
+        end_time: str,
+        search_type: str = "CMR",
+        max_results: int = 40,
+    ) -> list[RecordingSearchResult]:
+        """Search for recordings within a time range.
+
+        Args:
+            channel_id: The channel ID to search (e.g., 1 for camera 1)
+            start_time: Start time in ISO format (YYYY-MM-DDTHH:MM:SSZ)
+            end_time: End time in ISO format (YYYY-MM-DDTHH:MM:SSZ)
+            search_type: Type of recording to search for.
+                         Options: CMR (all), MOTION, ALARM, EDR, etc.
+            max_results: Maximum number of results to return
+
+        Returns:
+            List of RecordingSearchResult objects
+        """
+        track_id = f"{channel_id}01"  # Default to main stream (01)
+
+        # Build search request XML
+        search_data = {
+            "CMSearchDescription": {
+                "@version": "2.0",
+                "@xmlns": "http://www.isapi.org/ver20/XMLSchema",
+                "searchID": f"{channel_id}{start_time.replace('-', '').replace(':', '').replace('T', '').replace('Z', '')}",
+                "trackIDList": {"trackID": track_id},
+                "timeSpanList": {
+                    "timeSpan": {
+                        "startTime": start_time,
+                        "endTime": end_time,
+                    }
+                },
+                "maxResults": str(max_results),
+                "searchResultPostion": "0",
+                "metadataList": {"metadataDescriptor": "//recordType.meta.std-cgi.com"},
+            }
+        }
+
+        xml_data = xmltodict.unparse(search_data)
+        response = await self.request(POST, "ContentMgmt/search", present="dict", data=xml_data)
+
+        results = []
+        search_result = response.get("CMSearchResult", {})
+        match_list = search_result.get("matchList", {})
+
+        if not match_list:
+            return results
+
+        search_match_items = match_list.get("searchMatchItem", [])
+
+        # Handle single result (not a list)
+        if isinstance(search_match_items, dict):
+            search_match_items = [search_match_items]
+
+        for match in search_match_items:
+            source_id = match.get("sourceID", "")
+            track_id_result = match.get("trackID", "")
+            time_span = match.get("timeSpan", {})
+            media_segment_desc = match.get("mediaSegmentDescriptor", {})
+            playback_uri = media_segment_desc.get("playbackURI", "")
+            metadata_id = match.get("metadataMatches", {}).get("metadataDescriptor", "")
+
+            results.append(
+                RecordingSearchResult(
+                    channel_id=channel_id,
+                    start_time=time_span.get("startTime", ""),
+                    end_time=time_span.get("endTime", ""),
+                    source_id=source_id,
+                    track_id=track_id_result,
+                    playback_uri=playback_uri,
+                    metadata_id=metadata_id,
+                    content_type=media_segment_desc.get("contentType", "video"),
+                )
+            )
+
+        return results
+
+    async def search_event_recordings(
+        self,
+        channel_id: int,
+        start_time: str,
+        end_time: str,
+        event_type: str,
+        max_results: int = 40,
+    ) -> list[RecordingSearchResult]:
+        """Search for recordings of a specific event type.
+
+        Args:
+            channel_id: The channel ID to search
+            start_time: Start time in ISO format (YYYY-MM-DDTHH:MM:SSZ)
+            end_time: End time in ISO format (YYYY-MM-DDTHH:MM:SSZ)
+            event_type: Event type to filter by (e.g., VMD, MOTION, linedetection, fielddetection)
+            max_results: Maximum number of results to return
+
+        Returns:
+            List of RecordingSearchResult objects
+        """
+        track_id = f"{channel_id}01"
+
+        # Build event search request XML
+        search_data = {
+            "CMSearchDescription": {
+                "@version": "2.0",
+                "@xmlns": "http://www.isapi.org/ver20/XMLSchema",
+                "searchID": f"{channel_id}{event_type}{start_time.replace('-', '').replace(':', '').replace('T', '').replace('Z', '')}",
+                "trackIDList": {"trackID": track_id},
+                "timeSpanList": {
+                    "timeSpan": {
+                        "startTime": start_time,
+                        "endTime": end_time,
+                    }
+                },
+                "contentTypeList": {
+                    "contentType": "metadata"
+                },
+                "maxResults": str(max_results),
+                "searchResultPostion": "0",
+                "metadataList": {
+                    "metadataDescriptor": f"//recordType.meta.std-cgi.com/{event_type}"
+                },
+            }
+        }
+
+        xml_data = xmltodict.unparse(search_data)
+        response = await self.request(POST, "ContentMgmt/search", present="dict", data=xml_data)
+
+        results = []
+        search_result = response.get("CMSearchResult", {})
+        match_list = search_result.get("matchList", {})
+
+        if not match_list:
+            return results
+
+        search_match_items = match_list.get("searchMatchItem", [])
+
+        # Handle single result (not a list)
+        if isinstance(search_match_items, dict):
+            search_match_items = [search_match_items]
+
+        for match in search_match_items:
+            source_id = match.get("sourceID", "")
+            track_id_result = match.get("trackID", "")
+            time_span = match.get("timeSpan", {})
+            media_segment_desc = match.get("mediaSegmentDescriptor", {})
+            playback_uri = media_segment_desc.get("playbackURI", "")
+
+            results.append(
+                RecordingSearchResult(
+                    channel_id=channel_id,
+                    start_time=time_span.get("startTime", ""),
+                    end_time=time_span.get("endTime", ""),
+                    source_id=source_id,
+                    track_id=track_id_result,
+                    playback_uri=playback_uri,
+                    event_type=event_type,
+                    content_type=media_segment_desc.get("contentType", "video"),
+                )
+            )
+
+        return results
+
+    def get_playback_url(
+        self,
+        channel_id: int,
+        start_time: str,
+        end_time: str,
+        stream_type: int = 1,
+    ) -> str:
+        """Generate RTSP playback URL for recorded footage.
+
+        Args:
+            channel_id: The channel ID (camera) to playback
+            start_time: Start time in ISO format (YYYY-MM-DDTHH:MM:SSZ)
+            end_time: End time in ISO format (YYYY-MM-DDTHH:MM:SSZ)
+            stream_type: Stream type (1=main, 2=sub)
+
+        Returns:
+            RTSP URL for playback
+        """
+        u = quote(self.username, safe="")
+        p = quote(self.password, safe="")
+        stream_id = f"{channel_id}0{stream_type}"
+
+        # Format for Hikvision playback URI
+        # starttime and endtime are in format: YYYYMMDDTHHMMSSz
+        start_formatted = start_time.replace("-", "").replace(":", "").replace("Z", "z")
+        end_formatted = end_time.replace("-", "").replace(":", "").replace("Z", "z")
+
+        url = (
+            f"{self.device_info.ip_address}:{self.protocols.rtsp_port}/"
+            f"Streaming/tracks/{stream_id}?"
+            f"starttime={start_formatted}&endtime={end_formatted}"
+        )
+        return f"rtsp://{u}:{p}@{url}"
+
+    async def get_recording_calendar(
+        self,
+        channel_id: int,
+        year: int,
+        month: int,
+    ) -> list[int]:
+        """Get days in a month that have recordings.
+
+        Args:
+            channel_id: The channel ID to check
+            year: Year (e.g., 2024)
+            month: Month (1-12)
+
+        Returns:
+            List of day numbers that have recordings
+        """
+        track_id = f"{channel_id}01"
+
+        # Calculate start and end of month
+        start_time = f"{year:04d}-{month:02d}-01T00:00:00Z"
+        if month == 12:
+            end_time = f"{year + 1:04d}-01-01T00:00:00Z"
+        else:
+            end_time = f"{year:04d}-{month + 1:02d}-01T00:00:00Z"
+
+        # Build calendar search request XML
+        search_data = {
+            "trackDailyParam": {
+                "@version": "2.0",
+                "@xmlns": "http://www.isapi.org/ver20/XMLSchema",
+                "trackID": track_id,
+                "timeSpan": {
+                    "startTime": start_time,
+                    "endTime": end_time,
+                },
+            }
+        }
+
+        xml_data = xmltodict.unparse(search_data)
+        response = await self.request(POST, "ContentMgmt/record/tracks/daily", present="dict", data=xml_data)
+
+        days_with_recordings = []
+        daily_distribution = response.get("trackDailyDistribution", {})
+        day_list = daily_distribution.get("dayList", {})
+
+        if not day_list:
+            return days_with_recordings
+
+        day_items = day_list.get("day", [])
+
+        # Handle single result (not a list)
+        if isinstance(day_items, dict):
+            day_items = [day_items]
+
+        for day_item in day_items:
+            record_value = day_item.get("record", "false")
+            if record_value == "true":
+                day_of_month = int(day_item.get("dayOfMonth", 0))
+                if day_of_month > 0:
+                    days_with_recordings.append(day_of_month)
+
+        return days_with_recordings
 
     async def _detect_auth_method(self):
         """Establish the connection with device."""

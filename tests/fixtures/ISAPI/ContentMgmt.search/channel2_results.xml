@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CMSearchResult version="2.0" xmlns="http://www.isapi.org/ver20/XMLSchema">
+    <searchID>2202401150000</searchID>
+    <responseStatus>true</responseStatus>
+    <responseStatusStrg>OK</responseStatusStrg>
+    <numOfMatches>2</numOfMatches>
+    <matchList>
+        <searchMatchItem>
+            <sourceID>2</sourceID>
+            <trackID>201</trackID>
+            <timeSpan>
+                <startTime>2024-01-15T07:00:00Z</startTime>
+                <endTime>2024-01-15T07:30:00Z</endTime>
+            </timeSpan>
+            <mediaSegmentDescriptor>
+                <contentType>video</contentType>
+                <playbackURI>rtsp://192.168.1.100:554/Streaming/tracks/201?starttime=20240115T070000z&amp;endtime=20240115T073000z</playbackURI>
+            </mediaSegmentDescriptor>
+        </searchMatchItem>
+        <searchMatchItem>
+            <sourceID>2</sourceID>
+            <trackID>201</trackID>
+            <timeSpan>
+                <startTime>2024-01-15T16:00:00Z</startTime>
+                <endTime>2024-01-15T17:00:00Z</endTime>
+            </timeSpan>
+            <mediaSegmentDescriptor>
+                <contentType>video</contentType>
+                <playbackURI>rtsp://192.168.1.100:554/Streaming/tracks/201?starttime=20240115T160000z&amp;endtime=20240115T170000z</playbackURI>
+            </mediaSegmentDescriptor>
+        </searchMatchItem>
+    </matchList>
+</CMSearchResult>

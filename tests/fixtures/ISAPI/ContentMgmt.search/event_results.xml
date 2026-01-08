@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CMSearchResult version="2.0" xmlns="http://www.isapi.org/ver20/XMLSchema">
+    <searchID>1VMD202401150000</searchID>
+    <responseStatus>true</responseStatus>
+    <responseStatusStrg>OK</responseStatusStrg>
+    <numOfMatches>2</numOfMatches>
+    <matchList>
+        <searchMatchItem>
+            <sourceID>1</sourceID>
+            <trackID>101</trackID>
+            <timeSpan>
+                <startTime>2024-01-15T09:15:00Z</startTime>
+                <endTime>2024-01-15T09:15:30Z</endTime>
+            </timeSpan>
+            <mediaSegmentDescriptor>
+                <contentType>video</contentType>
+                <playbackURI>rtsp://192.168.1.100:554/Streaming/tracks/101?starttime=20240115T091500z&amp;endtime=20240115T091530z</playbackURI>
+            </mediaSegmentDescriptor>
+            <metadataMatches>
+                <metadataDescriptor>//recordType.meta.std-cgi.com/VMD</metadataDescriptor>
+            </metadataMatches>
+        </searchMatchItem>
+        <searchMatchItem>
+            <sourceID>1</sourceID>
+            <trackID>101</trackID>
+            <timeSpan>
+                <startTime>2024-01-15T14:30:00Z</startTime>
+                <endTime>2024-01-15T14:30:45Z</endTime>
+            </timeSpan>
+            <mediaSegmentDescriptor>
+                <contentType>video</contentType>
+                <playbackURI>rtsp://192.168.1.100:554/Streaming/tracks/101?starttime=20240115T143000z&amp;endtime=20240115T143045z</playbackURI>
+            </mediaSegmentDescriptor>
+            <metadataMatches>
+                <metadataDescriptor>//recordType.meta.std-cgi.com/VMD</metadataDescriptor>
+            </metadataMatches>
+        </searchMatchItem>
+    </matchList>
+</CMSearchResult>

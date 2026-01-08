@@ -135,3 +135,29 @@ class ProtocolsInfo:
     """Holds info of supported protocols."""
 
     rtsp_port: int = 554
+
+
+@dataclass
+class RecordingSearchResult:
+    """Holds info for a recording search result."""
+
+    channel_id: int
+    start_time: str
+    end_time: str
+    source_id: str
+    track_id: str
+    playback_uri: str = ""
+    metadata_id: str = ""
+    event_type: str = ""
+    content_type: str = "video"
+
+
+@dataclass
+class PlaybackSession:
+    """Holds info for a playback session."""
+
+    session_id: str
+    playback_uri: str
+    channel_id: int
+    start_time: str
+    end_time: str

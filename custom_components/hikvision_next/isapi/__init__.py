@@ -10,5 +10,7 @@ from .models import (  # noqa: F401
     CameraStreamInfo,
     EventInfo,
     IPCamera,
+    PlaybackSession,
+    RecordingSearchResult,
     StorageInfo,
 )
