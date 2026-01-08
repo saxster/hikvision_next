@@ -105,6 +105,16 @@ class CapabilitiesInfo:
     support_event_mutex_checking: bool = False
     input_ports: int = 0
     output_ports: int = 0
+    support_ptz: bool = False  # if device supports PTZ control
+
+
+@dataclass
+class PTZPresetInfo:
+    """Holds info of a PTZ preset."""
+
+    id: int
+    name: str
+    enabled: bool = True
 
 
 @dataclass
@@ -119,6 +129,8 @@ class AnalogCamera:
     connection_type: str
     streams: list[CameraStreamInfo] = field(default_factory=list)
     events_info: list[EventInfo] = field(default_factory=list)
+    support_ptz: bool = False
+    ptz_presets: list[PTZPresetInfo] = field(default_factory=list)
 
 
 @dataclass
