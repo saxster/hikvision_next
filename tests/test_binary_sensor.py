@@ -29,6 +29,16 @@ def mock_event_notification(file) -> MagicMock:
     return mock_request
 
 
+def setup_bus_event_listener(hass: HomeAssistant) -> list[Event]:
+    """Set up bus event listener and return events list."""
+    bus_events = []
+
+    def bus_event_listener(event: Event) -> None:
+        bus_events.append(event)
+    hass.bus.async_listen(HIKVISION_EVENT, bus_event_listener)
+    return bus_events
+
+
 @pytest.mark.parametrize("init_integration", ["DS-2CD2146G2-ISU"], indirect=True)
 async def test_target_specific_sensors_created(
     hass: HomeAssistant, init_integration: MockConfigEntry,
@@ -105,11 +115,7 @@ async def test_person_detection_triggers_person_sensor(
     person_entity_id = "binary_sensor.ds_2cd2146g2_isu00000000aawrg00000000_1_fielddetection_human"
     vehicle_entity_id = "binary_sensor.ds_2cd2146g2_isu00000000aawrg00000000_1_fielddetection_vehicle"
 
-    bus_events = []
-
-    def bus_event_listener(event: Event) -> None:
-        bus_events.append(event)
-    hass.bus.async_listen(HIKVISION_EVENT, bus_event_listener)
+    bus_events = setup_bus_event_listener(hass)
 
     # Verify initial states
     assert (generic_sensor := hass.states.get(generic_entity_id))
@@ -154,11 +160,7 @@ async def test_vehicle_detection_triggers_vehicle_sensor(
     person_entity_id = "binary_sensor.ds_2cd2146g2_isu00000000aawrg00000000_1_fielddetection_human"
     vehicle_entity_id = "binary_sensor.ds_2cd2146g2_isu00000000aawrg00000000_1_fielddetection_vehicle"
 
-    bus_events = []
-
-    def bus_event_listener(event: Event) -> None:
-        bus_events.append(event)
-    hass.bus.async_listen(HIKVISION_EVENT, bus_event_listener)
+    bus_events = setup_bus_event_listener(hass)
 
     # Verify initial states
     assert (generic_sensor := hass.states.get(generic_entity_id))
