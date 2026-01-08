@@ -40,6 +40,9 @@ from .models import (
     ISAPIDeviceInfo,
     MutexIssue,
     ProtocolsInfo,
+    PTZInfo,
+    PTZPatrolInfo,
+    PTZPresetInfo,
     StorageInfo,
 )
 from .utils import bool_to_str, deep_get, parse_isapi_response, str_to_bool
@@ -219,6 +222,11 @@ class ISAPIClient:
                             streams=await self.get_camera_streams(camera_id),
                         )
                     )
+
+        # Get PTZ info for each camera
+        for camera in self.cameras:
+            with suppress(Exception):
+                camera.ptz_info = await self.get_ptz_info(camera.id)
 
     async def get_protocols(self):
         """Get protocols and ports."""
@@ -648,6 +656,115 @@ class ISAPIClient:
     async def reboot(self):
         """Reboot device."""
         await self.request(PUT, "System/reboot", present="xml")
+
+    async def get_ptz_info(self, channel_id: int) -> PTZInfo:
+        """Get PTZ capabilities and data for a camera channel."""
+        ptz_info = PTZInfo()
+
+        # Get PTZ capabilities
+        try:
+            capabilities = await self.request(GET, f"PTZCtrl/channels/{channel_id}/capabilities")
+        except HTTPStatusError:
+            return ptz_info
+        if not capabilities:
+            return ptz_info
+
+        ptz_cap = capabilities.get("PTZChanelCap", capabilities.get("PTZChannelCap", {}))
+        if not ptz_cap:
+            return ptz_info
+
+        ptz_info.is_supported = True
+        ptz_info.absolute_move = str_to_bool(ptz_cap.get("AbsolutePanTiltPositionSpace", {}).get("isSupport", "false"))
+        ptz_info.relative_move = str_to_bool(ptz_cap.get("RelativePanTiltPositionSpace", {}).get("isSupport", "false"))
+        ptz_info.continuous_move = str_to_bool(
+            ptz_cap.get("ContinuousPanTiltVelocitySpace", {}).get("isSupport", "false")
+        )
+
+        # Get presets
+        ptz_info.presets = await self.get_ptz_presets(channel_id)
+
+        # Get patrols
+        ptz_info.patrols = await self.get_ptz_patrols(channel_id)
+
+        return ptz_info
+
+    async def get_ptz_presets(self, channel_id: int) -> list[PTZPresetInfo]:
+        """Get PTZ presets for a camera channel."""
+        presets = []
+        try:
+            data = await self.request(GET, f"PTZCtrl/channels/{channel_id}/presets")
+        except HTTPStatusError:
+            return presets
+        if not data:
+            return presets
+
+        preset_list = deep_get(data, "PTZPresetList.PTZPreset", [])
+        if not isinstance(preset_list, list):
+            preset_list = [preset_list]
+
+        for preset in preset_list:
+            preset_id = int(preset.get("id", 0))
+            preset_name = preset.get("presetName", "")
+            # Only include presets that have a name (configured presets)
+            if preset_id > 0 and preset_name:
+                presets.append(
+                    PTZPresetInfo(
+                        id=preset_id,
+                        name=preset_name,
+                        enabled=str_to_bool(preset.get("enabled", "true")),
+                    )
+                )
+        return presets
+
+    async def goto_ptz_preset(self, channel_id: int, preset_id: int) -> None:
+        """Move PTZ camera to a preset position."""
+        await self.request(PUT, f"PTZCtrl/channels/{channel_id}/presets/{preset_id}/goto", present="xml")
+
+    async def get_ptz_patrols(self, channel_id: int) -> list[PTZPatrolInfo]:
+        """Get PTZ patrols for a camera channel."""
+        patrols = []
+        try:
+            data = await self.request(GET, f"PTZCtrl/channels/{channel_id}/patrols")
+        except HTTPStatusError:
+            return patrols
+        if not data:
+            return patrols
+
+        patrol_list = deep_get(data, "PTZPatrolList.PTZPatrol", [])
+        if not isinstance(patrol_list, list):
+            patrol_list = [patrol_list]
+
+        for patrol in patrol_list:
+            patrol_id = int(patrol.get("id", 0))
+            patrol_name = patrol.get("patrolName", "")
+            # Only include patrols that have a name (configured patrols)
+            if patrol_id > 0 and patrol_name:
+                patrols.append(
+                    PTZPatrolInfo(
+                        id=patrol_id,
+                        name=patrol_name,
+                        enabled=str_to_bool(patrol.get("enabled", "true")),
+                    )
+                )
+        return patrols
+
+    async def start_ptz_patrol(self, channel_id: int, patrol_id: int) -> None:
+        """Start PTZ patrol."""
+        await self.request(PUT, f"PTZCtrl/channels/{channel_id}/patrols/{patrol_id}/start", present="xml")
+
+    async def stop_ptz_patrol(self, channel_id: int, patrol_id: int) -> None:
+        """Stop PTZ patrol."""
+        await self.request(PUT, f"PTZCtrl/channels/{channel_id}/patrols/{patrol_id}/stop", present="xml")
+
+    async def get_ptz_patrol_status(self, channel_id: int, patrol_id: int) -> bool:
+        """Get PTZ patrol running status."""
+        try:
+            data = await self.request(GET, f"PTZCtrl/channels/{channel_id}/patrols/{patrol_id}/status")
+        except HTTPStatusError:
+            return False
+        if not data:
+            return False
+        return deep_get(data, "PTZStatus.patrolStatus", "idle") == "running"
 
     @staticmethod
     def parse_event_notification(xml: str) -> AlertInfo:

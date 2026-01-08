@@ -89,6 +89,14 @@
       },
       "io": {
         "name": "Alarm Input {io_port_id}"
+      },
+      "ptz_patrol": {
+        "name": "PTZ Patrol {patrol_name}"
+      }
+    },
+    "select": {
+      "ptz_preset": {
+        "name": "PTZ Preset"
       }
     },
     "camera": {
