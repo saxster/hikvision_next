@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CMSearchResult version="2.0" xmlns="http://www.isapi.org/ver20/XMLSchema">
+    <searchID>1202401151000</searchID>
+    <responseStatus>true</responseStatus>
+    <responseStatusStrg>OK</responseStatusStrg>
+    <numOfMatches>1</numOfMatches>
+    <matchList>
+        <searchMatchItem>
+            <sourceID>1</sourceID>
+            <trackID>101</trackID>
+            <timeSpan>
+                <startTime>2024-01-15T10:00:00Z</startTime>
+                <endTime>2024-01-15T10:30:00Z</endTime>
+            </timeSpan>
+            <mediaSegmentDescriptor>
+                <contentType>video</contentType>
+                <playbackURI>rtsp://192.168.1.100:554/Streaming/tracks/101?starttime=20240115T100000z&amp;endtime=20240115T103000z</playbackURI>
+            </mediaSegmentDescriptor>
+        </searchMatchItem>
+    </matchList>
+</CMSearchResult>

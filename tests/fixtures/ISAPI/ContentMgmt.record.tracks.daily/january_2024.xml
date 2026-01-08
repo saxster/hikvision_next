@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<trackDailyDistribution version="2.0" xmlns="http://www.isapi.org/ver20/XMLSchema">
+    <trackID>101</trackID>
+    <timeSpan>
+        <startTime>2024-01-01T00:00:00Z</startTime>
+        <endTime>2024-02-01T00:00:00Z</endTime>
+    </timeSpan>
+    <dayList>
+        <day>
+            <dayOfMonth>5</dayOfMonth>
+            <record>true</record>
+        </day>
+        <day>
+            <dayOfMonth>6</dayOfMonth>
+            <record>false</record>
+        </day>
+        <day>
+            <dayOfMonth>10</dayOfMonth>
+            <record>true</record>
+        </day>
+        <day>
+            <dayOfMonth>15</dayOfMonth>
+            <record>true</record>
+        </day>
+        <day>
+            <dayOfMonth>20</dayOfMonth>
+            <record>true</record>
+        </day>
+        <day>
+            <dayOfMonth>25</dayOfMonth>
+            <record>true</record>
+        </day>
+    </dayList>
+</trackDailyDistribution>

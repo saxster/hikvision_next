@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CMSearchResult version="2.0" xmlns="http://www.isapi.org/ver20/XMLSchema">
+    <searchID>1202401150000</searchID>
+    <responseStatus>true</responseStatus>
+    <responseStatusStrg>OK</responseStatusStrg>
+    <numOfMatches>3</numOfMatches>
+    <matchList>
+        <searchMatchItem>
+            <sourceID>1</sourceID>
+            <trackID>101</trackID>
+            <timeSpan>
+                <startTime>2024-01-15T08:00:00Z</startTime>
+                <endTime>2024-01-15T08:45:00Z</endTime>
+            </timeSpan>
+            <mediaSegmentDescriptor>
+                <contentType>video</contentType>
+                <playbackURI>rtsp://192.168.1.100:554/Streaming/tracks/101?starttime=20240115T080000z&amp;endtime=20240115T084500z</playbackURI>
+            </mediaSegmentDescriptor>
+        </searchMatchItem>
+        <searchMatchItem>
+            <sourceID>1</sourceID>
+            <trackID>101</trackID>
+            <timeSpan>
+                <startTime>2024-01-15T12:00:00Z</startTime>
+                <endTime>2024-01-15T12:30:00Z</endTime>
+            </timeSpan>
+            <mediaSegmentDescriptor>
+                <contentType>video</contentType>
+                <playbackURI>rtsp://192.168.1.100:554/Streaming/tracks/101?starttime=20240115T120000z&amp;endtime=20240115T123000z</playbackURI>
+            </mediaSegmentDescriptor>
+        </searchMatchItem>
+        <searchMatchItem>
+            <sourceID>1</sourceID>
+            <trackID>101</trackID>
+            <timeSpan>
+                <startTime>2024-01-15T18:00:00Z</startTime>
+                <endTime>2024-01-15T19:00:00Z</endTime>
+            </timeSpan>
+            <mediaSegmentDescriptor>
+                <contentType>video</contentType>
+                <playbackURI>rtsp://192.168.1.100:554/Streaming/tracks/101?starttime=20240115T180000z&amp;endtime=20240115T190000z</playbackURI>
+            </mediaSegmentDescriptor>
+        </searchMatchItem>
+    </matchList>
+</CMSearchResult>
