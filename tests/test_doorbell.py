@@ -5,27 +5,10 @@ from http import HTTPStatus
 from homeassistant.core import HomeAssistant, Event
 from homeassistant.const import STATE_ON, STATE_OFF
 from pytest_homeassistant_custom_component.common import MockConfigEntry
-from unittest.mock import MagicMock
 
 from custom_components.hikvision_next.notifications import EventNotificationsView
 from custom_components.hikvision_next.const import HIKVISION_EVENT
-from tests.conftest import load_fixture, TEST_HOST_IP, TEST_CONFIG
-
-
-def mock_event_notification(file) -> MagicMock:
-    """Mock incoming event notification request."""
-    mock_request = MagicMock()
-    mock_request.headers = {
-        'Content-Type': 'application/xml; charset="UTF-8"',
-    }
-    mock_request.remote = TEST_HOST_IP
-
-    async def read():
-        payload = load_fixture("ISAPI/EventNotificationAlert", file)
-        return payload.encode()
-
-    mock_request.read = read
-    return mock_request
+from tests.test_notifications import mock_event_notification
 
 
 @pytest.mark.parametrize("init_integration", ["DS-KV8113-WME1"], indirect=True)

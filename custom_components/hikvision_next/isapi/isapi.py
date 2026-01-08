@@ -373,11 +373,8 @@ class ISAPIClient:
                 url = f"ContentMgmt/IOProxy/{slug}/{io_port_id}"
             else:
                 url = f"System/IO/{slug}/{io_port_id}"
-        elif event_type == EVENT_PIR:
-            # ISAPI/WLAlarm/PIR
-            url = slug
-        elif event_type == EVENT_VIDEOINTERCOM:
-            # ISAPI/VideoIntercom/callStatus
+        elif event_type in (EVENT_PIR, EVENT_VIDEOINTERCOM):
+            # Device-level events that use slug directly (e.g., ISAPI/WLAlarm/PIR, ISAPI/VideoIntercom/callStatus)
             url = slug
         else:
             url = f"Smart/{slug}/{channel_id}"
