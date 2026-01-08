@@ -1723,9 +1723,9 @@
                       "dynVideoInputID": "2"
                     },
                     {
-                    "id": "center",
-                    "notificationMethod": "center"
-                  }
+                      "id": "center",
+                      "notificationMethod": "center"
+                    }
                   ]
                 }
               },
@@ -2021,9 +2021,9 @@
                 "eventType": "diskerror",
                 "EventTriggerNotificationList": {
                   "EventTriggerNotification": {
-                      "id": "beep",
-                      "notificationMethod": "beep"
-                    }
+                    "id": "beep",
+                    "notificationMethod": "beep"
+                  }
                 }
               },
               {
@@ -2065,6 +2065,18 @@
                       "notificationMethod": "center"
                     }
                   ]
+                }
+              },
+              {
+                "id": "ANPR-1",
+                "eventType": "ANPR",
+                "dynVideoInputChannelID": "1",
+                "EventTriggerNotificationList": {
+                  "EventTriggerNotification": {
+                    "id": "center",
+                    "notificationMethod": "center",
+                    "notificationRecurrence": "beginning"
+                  }
                 }
               }
             ]

@@ -142,6 +142,14 @@ class HikvisionDevice(ISAPIClient):
                 events.append(event)
         return events
 
+    def supports_anpr(self, camera_id: int | None = None) -> bool:
+        """Check if device supports ANPR (License Plate Recognition)."""
+        if camera_id is None or camera_id == 0:
+            # Check NVR-level ANPR support
+            return any(s.id == "anpr" and s.channel_id == 0 for s in self.supported_events)
+        # Check camera-level ANPR support
+        return any(s.id == "anpr" and s.channel_id == camera_id for s in self.supported_events)
+
     def handle_exception(self, ex: Exception, details: str = ""):
         """Handle common exceptions."""
 

@@ -7,9 +7,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import slugify
 
 from . import HikvisionConfigEntry
 from .const import CONF_ALARM_SERVER_HOST, SECONDARY_COORDINATOR
+from .hikvision_device import HikvisionDevice
 from .isapi import StorageInfo
 
 NOTIFICATION_HOST_KEYS = [
@@ -38,7 +40,16 @@ async def async_setup_entry(
         for item in list(device.storage):
             entities.append(StorageSensor(coordinator, item))
 
-        async_add_entities(entities, True)
+    # Add license plate sensors for cameras that support ANPR
+    for camera in device.cameras:
+        if device.supports_anpr(camera.id):
+            entities.append(LicensePlateSensor(device, camera.id))
+
+    # Add license plate sensor for NVR-level ANPR if supported
+    if device.supports_anpr():
+        entities.append(LicensePlateSensor(device, 0))
+
+    async_add_entities(entities, True)
 
 
 class AlarmServerSensor(CoordinatorEntity, SensorEntity):
@@ -98,3 +109,23 @@ class StorageSensor(CoordinatorEntity, SensorEntity):
         if self.hdd.ip:
             attrs["ip"] = self.hdd.ip
         return attrs
+
+
+class LicensePlateSensor(SensorEntity):
+    """License Plate sensor for ANPR events."""
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:car"
+
+    def __init__(self, device: HikvisionDevice, camera_id: int) -> None:
+        """Initialize."""
+        self._device = device
+        self._camera_id = camera_id
+        serial_no = slugify(device.device_info.serial_no.lower())
+        device_id_param = f"_{camera_id}" if camera_id != 0 else ""
+        self._attr_unique_id = f"{serial_no}{device_id_param}_license_plate"
+        self.entity_id = ENTITY_ID_FORMAT.format(self._attr_unique_id)
+        self._attr_device_info = device.hass_device_info(camera_id)
+        self._attr_translation_key = "license_plate"
+        self._attr_native_value = None
+        self._attr_extra_state_attributes = {}

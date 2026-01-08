@@ -20,7 +20,7 @@ from homeassistant.util import slugify
 from .const import ALARM_SERVER_PATH, DOMAIN, HIKVISION_EVENT
 from .hikvision_device import HikvisionDevice
 from .isapi import AlertInfo, IPCamera, ISAPIClient
-from .isapi.const import EVENT_IO
+from .isapi.const import EVENT_ANPR, EVENT_IO
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -173,6 +173,12 @@ class EventNotificationsView(HomeAssistantView):
 
         serial_no = self.device.device_info.serial_no.lower()
 
+        # Handle ANPR events - update the license plate sensor
+        if alert.event_id == EVENT_ANPR:
+            self._update_license_plate_sensor(alert)
+            self.fire_hass_event(alert)
+            return
+
         device_id_param = f"_{alert.channel_id}" if alert.channel_id != 0 and alert.event_id != EVENT_IO else ""
         io_port_id_param = f"_{alert.io_port_id}" if alert.io_port_id != 0 else ""
         unique_id = f"binary_sensor.{slugify(serial_no)}{device_id_param}{io_port_id_param}_{alert.event_id}"
@@ -189,6 +195,36 @@ class EventNotificationsView(HomeAssistantView):
             return
         raise ValueError(f"Entity not found {entity_id}")
 
+    def _update_license_plate_sensor(self, alert: AlertInfo) -> None:
+        """Update the license plate sensor with ANPR data."""
+        serial_no = self.device.device_info.serial_no.lower()
+        device_id_param = f"_{alert.channel_id}" if alert.channel_id != 0 else ""
+        unique_id = f"{slugify(serial_no)}{device_id_param}_license_plate"
+
+        _LOGGER.debug("ANPR License Plate Sensor UNIQUE_ID: %s", unique_id)
+
+        entity_registry = async_get(self.hass)
+        entity_id = entity_registry.async_get_entity_id(Platform.SENSOR, DOMAIN, unique_id)
+        if entity_id:
+            entity = self.hass.states.get(entity_id)
+            if entity:
+                # Build extra attributes
+                extra_attrs = dict(entity.attributes) if entity.attributes else {}
+                extra_attrs["channel_id"] = alert.channel_id
+                if alert.detection_target:
+                    extra_attrs["detection_target"] = alert.detection_target
+                if alert.region_id:
+                    extra_attrs["region_id"] = alert.region_id
+
+                # Update sensor state with license plate
+                self.hass.states.async_set(
+                    entity_id,
+                    alert.license_plate or "",
+                    extra_attrs,
+                )
+                return
+        _LOGGER.warning("License plate sensor not found: %s", entity_id)
+
     def fire_hass_event(self, alert: AlertInfo):
         """Fire HASS event."""
         camera_name = ""
@@ -204,6 +240,8 @@ class EventNotificationsView(HomeAssistantView):
         if alert.detection_target:
             message["detection_target"] = alert.detection_target
             message["region_id"] = alert.region_id
+        if alert.license_plate:
+            message["license_plate"] = alert.license_plate
 
         self.hass.bus.fire(
             HIKVISION_EVENT,

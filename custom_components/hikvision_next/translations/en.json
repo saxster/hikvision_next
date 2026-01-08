@@ -117,6 +117,9 @@
       },
       "notifications_host_path": {
         "name": "Notifications Host Path"
+      },
+      "license_plate": {
+        "name": "License Plate"
       }
     },
     "image": {
