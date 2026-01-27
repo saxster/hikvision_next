@@ -54,6 +54,12 @@
       },
       "io": {
         "name": "Alarm Input {io_port_id}"
+      },
+      "pir": {
+        "name": "PIR"
+      },
+      "videointercomevent": {
+        "name": "Doorbell"
       }
     },
     "switch": {
