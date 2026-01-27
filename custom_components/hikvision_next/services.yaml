@@ -63,6 +63,9 @@ isapi_request:
         text:
           multiline: true
 
+start_two_way_audio:
+  name: Start two-way audio
+  description: "Open a two-way audio session on the device. This signals the device to start listening for audio input. Useful for doorbells and cameras with speaker support."
 ptz_goto_preset:
   name: PTZ Go to Preset
   description: "Move PTZ camera to a preset position. The preset must be configured on the camera first."
@@ -70,11 +73,15 @@ ptz_goto_preset:
     config_entry_id:
       required: true
       name: "Device"
+      description: "The Hikvision device with two-way audio support."
       description: "The Hikvision device. Permission needed - Remote: PTZ Control"
       selector:
         config_entry:
           integration: hikvision_next
     channel_id:
+      required: false
+      name: "Channel ID"
+      description: "The two-way audio channel ID. Defaults to 1."
       required: true
       name: "Channel ID"
       description: "Camera channel ID. Use 1 for standalone cameras, or the NVR channel number (e.g., 1, 2, 3 for NVR channels)."
@@ -92,6 +99,12 @@ ptz_goto_preset:
       selector:
         number:
           min: 1
+          max: 10
+          mode: box
+
+stop_two_way_audio:
+  name: Stop two-way audio
+  description: "Close the two-way audio session on the device."
           max: 300
           mode: box
 
@@ -102,11 +115,15 @@ ptz_set_patrol:
     config_entry_id:
       required: true
       name: "Device"
+      description: "The Hikvision device with two-way audio support."
       description: "The Hikvision device. Permission needed - Remote: PTZ Control"
       selector:
         config_entry:
           integration: hikvision_next
     channel_id:
+      required: false
+      name: "Channel ID"
+      description: "The two-way audio channel ID. Defaults to 1."
       required: true
       name: "Channel ID"
       description: "Camera channel ID. Use 1 for standalone cameras, or the NVR channel number (e.g., 1, 2, 3 for NVR channels)."
@@ -114,6 +131,8 @@ ptz_set_patrol:
       selector:
         number:
           min: 1
+          max: 10
+          mode: box
           max: 999
           mode: box
     patrol_id:

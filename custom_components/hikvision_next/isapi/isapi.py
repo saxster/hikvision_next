@@ -41,6 +41,7 @@ from .models import (
     MutexIssue,
     ProtocolsInfo,
     StorageInfo,
+    TwoWayAudioChannelInfo,
 )
 from .utils import bool_to_str, deep_get, parse_isapi_response, str_to_bool
 
@@ -81,6 +82,7 @@ class ISAPIClient:
         self.storage: list[StorageInfo] = []
         self.protocols = ProtocolsInfo()
         self.pending_initialization = False
+        self.two_way_audio_channels: list[TwoWayAudioChannelInfo] = []
 
     async def get_device_info(self):
         """Get device info."""
@@ -114,6 +116,10 @@ class ISAPIClient:
         self.capabilities.output_ports = int(deep_get(capabilities, "SysCap.IOCap.IOOutputPortNums", 0))
         self.capabilities.support_alarm_server = bool(await self.get_alarm_server())
 
+        # Check two-way audio support
+        self.capabilities.two_way_audio_channels = int(capabilities.get("voicetalkNums", 0))
+        self.capabilities.support_two_way_audio = self.capabilities.two_way_audio_channels > 0
+
         # Set if NVR based on whether more than 1 supported IP or analog cameras
         # Single IP camera will show 0 supported devices in total
         if self.capabilities.analog_cameras_inputs + self.capabilities.digital_cameras_inputs > 1:
@@ -127,6 +133,11 @@ class ISAPIClient:
 
         with suppress(Exception):
             self.storage = await self.get_storage_devices()
+
+        # Fetch two-way audio channels if supported
+        if self.capabilities.support_two_way_audio:
+            with suppress(Exception):
+                self.two_way_audio_channels = await self.get_two_way_audio_channels()
 
     async def get_cameras(self):
         """Get camera objects for all connected cameras."""
@@ -649,6 +660,40 @@ class ISAPIClient:
         """Reboot device."""
         await self.request(PUT, "System/reboot", present="xml")
 
+    async def get_two_way_audio_channels(self) -> list[TwoWayAudioChannelInfo]:
+        """Get two-way audio channels."""
+        channels = []
+        response = await self.request(GET, "System/TwoWayAudio/channels")
+        channel_list = deep_get(response, "TwoWayAudioChannelList.TwoWayAudioChannel", [])
+        if not isinstance(channel_list, list):
+            channel_list = [channel_list]
+        for channel in channel_list:
+            if channel is not None and isinstance(channel, dict):
+                channels.append(
+                    TwoWayAudioChannelInfo(
+                        id=int(channel.get("id", 1)),
+                        enabled=str_to_bool(channel.get("enabled", "false")),
+                        audio_compression_type=channel.get("audioCompressionType", "G.711ulaw"),
+                    )
+                )
+        return channels
+
+    async def start_two_way_audio(self, channel_id: int = 1) -> None:
+        """Start two-way audio session.
+
+        Opens a two-way audio channel on the device. This signals the device
+        to start listening for audio input.
+        """
+        url = f"System/TwoWayAudio/channels/{channel_id}/open"
+        await self.request(PUT, url, present="xml")
+
+    async def stop_two_way_audio(self, channel_id: int = 1) -> None:
+        """Stop two-way audio session.
+
+        Closes the two-way audio channel on the device.
+        """
+        url = f"System/TwoWayAudio/channels/{channel_id}/close"
+        await self.request(PUT, url, present="xml")
     async def ptz_goto_preset(self, channel_id: int, preset_id: int):
         """Move PTZ camera to a preset position.
 
