@@ -5,6 +5,7 @@ import pytest
 import respx
 import xmltodict
 from custom_components.hikvision_next.const import DOMAIN, CONF_SET_ALARM_SERVER, CONF_ALARM_SERVER_HOST, RTSP_PORT_FORCED
+from custom_components.hikvision_next.notifications import cancel_all_pending_resets
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME, CONF_VERIFY_SSL
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.hikvision_next.isapi import ISAPIClient
@@ -35,6 +36,13 @@ TEST_CONFIG_OUTSIDE_NETWORK = {
 @pytest.fixture(autouse=True)
 def auto_enable_custom_integrations(enable_custom_integrations):
     yield
+
+
+@pytest.fixture(autouse=True)
+def cleanup_pending_resets():
+    """Clean up any pending auto-reset timers after each test."""
+    yield
+    cancel_all_pending_resets()
 
 
 @pytest.fixture

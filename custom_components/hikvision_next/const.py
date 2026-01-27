@@ -28,6 +28,11 @@ ACTION_PTZ_SET_PATROL = "ptz_set_patrol"
 
 HIKVISION_EVENT = f"{DOMAIN}_event"
 
+# Auto-reset timeout in seconds for event-based binary sensors
+# When an event is received, the sensor will automatically reset to OFF
+# after this timeout if no new events are received
+EVENT_AUTO_RESET_TIMEOUT: Final = 5
+
 EVENTS = {
     "motiondetection": {
         **ISAPI_EVENTS["motiondetection"],
