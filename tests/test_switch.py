@@ -196,12 +196,13 @@ async def test_ipc_multichannel_event_switch(
     device: HikvisionDevice = init_integration.runtime_data
 
     assert device.capabilities.is_multi_channel
-    assert len(device.cameras[0].events_info) == 2
+    assert len(device.cameras[0].events_info) == 3
     assert len(device.cameras[1].events_info) == 4
 
     switch_entities = [
         'switch.ds_2se4c425mwg_e_0000000000aawrfc0000000_1_motiondetection',
         'switch.ds_2se4c425mwg_e_0000000000aawrfc0000000_1_tamperdetection',
+        'switch.ds_2se4c425mwg_e_0000000000aawrfc0000000_1_audioexception',
         'switch.ds_2se4c425mwg_e_0000000000aawrfc0000000_2_fielddetection',
         'switch.ds_2se4c425mwg_e_0000000000aawrfc0000000_2_linedetection',
         # 2 events are diabled

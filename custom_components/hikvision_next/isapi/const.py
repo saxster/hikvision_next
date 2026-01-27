@@ -70,10 +70,30 @@ EVENTS = {
         "slug": "WLAlarm/PIR",
         "direct_node": "PIRAlarm",
     },
-    "videointercomevent": {
-        "type": EVENT_VIDEOINTERCOM,
-        "label": "Doorbell",
-        "slug": "VideoIntercom/callStatus",
+    "visitorcall": {
+        "type": EVENT_BASIC,
+        "label": "Visitor Call",
+        "slug": "visitorCall",
+    },
+    "facedetection": {
+        "type": EVENT_SMART,
+        "label": "Face Detection",
+        "slug": "FaceDetection",
+    },
+    "audioexception": {
+        "type": EVENT_SMART,
+        "label": "Audio Exception",
+        "slug": "AudioException",
+    },
+    "defocus": {
+        "type": EVENT_BASIC,
+        "label": "Defocus Detection",
+        "slug": "defocus",
+    },
+    "unattendedbaggage": {
+        "type": EVENT_SMART,
+        "label": "Unattended Baggage",
+        "slug": "UnattendedBaggage",
     },
 }
 

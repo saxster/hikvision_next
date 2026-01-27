@@ -74,8 +74,24 @@ EVENTS = {
         **ISAPI_EVENTS["pir"],
         "device_class": BinarySensorDeviceClass.MOTION,
     },
-    "videointercomevent": {
-        **ISAPI_EVENTS["videointercomevent"],
+    "visitorcall": {
+        **ISAPI_EVENTS["visitorcall"],
         "device_class": BinarySensorDeviceClass.OCCUPANCY,
+    },
+    "facedetection": {
+        **ISAPI_EVENTS["facedetection"],
+        "device_class": BinarySensorDeviceClass.MOTION,
+    },
+    "audioexception": {
+        **ISAPI_EVENTS["audioexception"],
+        "device_class": BinarySensorDeviceClass.SOUND,
+    },
+    "defocus": {
+        **ISAPI_EVENTS["defocus"],
+        "device_class": BinarySensorDeviceClass.PROBLEM,
+    },
+    "unattendedbaggage": {
+        **ISAPI_EVENTS["unattendedbaggage"],
+        "device_class": BinarySensorDeviceClass.PROBLEM,
     },
 }
