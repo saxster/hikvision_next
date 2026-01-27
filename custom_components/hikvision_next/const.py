@@ -23,6 +23,8 @@ ACTION_ISAPI_REQUEST = "isapi_request"
 ACTION_UPDATE_SNAPSHOT = "update_snapshot"
 ACTION_START_TWO_WAY_AUDIO = "start_two_way_audio"
 ACTION_STOP_TWO_WAY_AUDIO = "stop_two_way_audio"
+ACTION_PTZ_GOTO_PRESET = "ptz_goto_preset"
+ACTION_PTZ_SET_PATROL = "ptz_set_patrol"
 
 HIKVISION_EVENT = f"{DOMAIN}_event"
 
