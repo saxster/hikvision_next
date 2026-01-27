@@ -3,10 +3,18 @@
 import pytest
 import respx
 import httpx
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.const import STATE_IDLE
 from homeassistant.components.camera.helper import get_camera_from_entity_id
-from homeassistant.components.camera import DOMAIN as CAMERA_DOMAIN
+from homeassistant.components.camera import (
+    DOMAIN as CAMERA_DOMAIN,
+    CameraEntityFeature,
+    StreamType,
+    async_register_webrtc_provider,
+    CameraWebRTCProvider,
+    WebRTCSendMessage,
+)
+from webrtc_models import RTCIceCandidateInit
 from custom_components.hikvision_next.hikvision_device import HikvisionDevice
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from tests.conftest import load_fixture
@@ -147,3 +155,238 @@ async def test_nvr_with_onvif_cameras(hass: HomeAssistant, init_integration: Moc
         unique_serial_no.add(camera.serial_no)
 
     assert len(device.cameras) == len(unique_serial_no)
+
+
+# WebRTC Tests
+
+
+class MockWebRTCProvider(CameraWebRTCProvider):
+    """Mock WebRTC provider for testing."""
+
+    def __init__(self) -> None:
+        """Initialize the mock provider."""
+        self._supported_streams = frozenset(("rtsp", "rtsps"))
+
+    @property
+    def domain(self) -> str:
+        """Return the integration domain of the provider."""
+        return "mock_webrtc"
+
+    @callback
+    def async_is_supported(self, stream_source: str) -> bool:
+        """Return if this provider supports the stream source."""
+        return stream_source.partition(":")[0] in self._supported_streams
+
+    async def async_handle_async_webrtc_offer(
+        self,
+        camera,
+        offer_sdp: str,
+        session_id: str,
+        send_message: WebRTCSendMessage,
+    ) -> None:
+        """Handle the WebRTC offer and return the answer via the provided callback."""
+        pass
+
+    async def async_on_webrtc_candidate(
+        self,
+        session_id: str,
+        candidate: RTCIceCandidateInit,
+    ) -> None:
+        """Handle the WebRTC candidate."""
+        pass
+
+
+@pytest.mark.parametrize("init_integration", ["DS-7608NXI-I2"], indirect=True)
+async def test_camera_supports_stream_feature(
+    hass: HomeAssistant, init_integration: MockConfigEntry
+) -> None:
+    """Test that camera supports streaming feature."""
+
+    entity_id = "camera.ds_7608nxi_i0_0p_s0000000000ccrrj00000000wcvu_101"
+    camera_entity = get_camera_from_entity_id(hass, entity_id)
+
+    # Verify stream feature is supported
+    assert CameraEntityFeature.STREAM in camera_entity.supported_features
+
+
+@pytest.mark.parametrize("init_integration", ["DS-7608NXI-I2"], indirect=True)
+async def test_camera_stream_source_rtsp_format(
+    hass: HomeAssistant, init_integration: MockConfigEntry
+) -> None:
+    """Test that camera stream source is in RTSP format compatible with WebRTC providers."""
+
+    entity_id = "camera.ds_7608nxi_i0_0p_s0000000000ccrrj00000000wcvu_101"
+    camera_entity = get_camera_from_entity_id(hass, entity_id)
+
+    stream_url = await camera_entity.stream_source()
+
+    # Verify the stream source is RTSP format
+    assert stream_url is not None
+    assert stream_url.startswith("rtsp://")
+    # Verify it contains the proper Hikvision streaming path
+    assert "/Streaming/channels/" in stream_url
+
+
+@pytest.mark.parametrize("init_integration", ["DS-7608NXI-I2"], indirect=True)
+async def test_camera_webrtc_provider_compatible(
+    hass: HomeAssistant, init_integration: MockConfigEntry
+) -> None:
+    """Test that camera stream source is compatible with WebRTC providers like go2rtc."""
+
+    entity_id = "camera.ds_7608nxi_i0_0p_s0000000000ccrrj00000000wcvu_101"
+    camera_entity = get_camera_from_entity_id(hass, entity_id)
+
+    stream_url = await camera_entity.stream_source()
+
+    # Create a mock WebRTC provider that supports RTSP
+    mock_provider = MockWebRTCProvider()
+
+    # Verify the stream URL is supported by RTSP-capable WebRTC providers
+    assert mock_provider.async_is_supported(stream_url)
+
+
+@pytest.mark.parametrize("init_integration", ["DS-7608NXI-I2"], indirect=True)
+async def test_camera_frontend_stream_type_hls_default(
+    hass: HomeAssistant, init_integration: MockConfigEntry
+) -> None:
+    """Test that camera frontend_stream_type is HLS by default (no WebRTC provider)."""
+
+    entity_id = "camera.ds_7608nxi_i0_0p_s0000000000ccrrj00000000wcvu_101"
+    camera_entity = get_camera_from_entity_id(hass, entity_id)
+
+    # Without a WebRTC provider, should fall back to HLS
+    assert camera_entity.frontend_stream_type == StreamType.HLS
+
+
+@pytest.mark.parametrize("init_integration", ["DS-7608NXI-I2"], indirect=True)
+async def test_camera_frontend_stream_type_webrtc_with_provider(
+    hass: HomeAssistant, init_integration: MockConfigEntry
+) -> None:
+    """Test that camera frontend_stream_type becomes WebRTC when a provider is registered."""
+
+    entity_id = "camera.ds_7608nxi_i0_0p_s0000000000ccrrj00000000wcvu_101"
+    camera_entity = get_camera_from_entity_id(hass, entity_id)
+
+    # Register a mock WebRTC provider
+    mock_provider = MockWebRTCProvider()
+    unregister = async_register_webrtc_provider(hass, mock_provider)
+
+    # Refresh providers to pick up the new provider
+    await camera_entity.async_refresh_providers()
+
+    # With a WebRTC provider, should be WebRTC
+    assert camera_entity.frontend_stream_type == StreamType.WEB_RTC
+
+    # Cleanup
+    unregister()
+
+
+@pytest.mark.parametrize("init_integration", ["DS-7608NXI-I2", "DS-7616NI-Q2"], indirect=True)
+async def test_camera_webrtc_stream_urls_all_devices(
+    hass: HomeAssistant, init_integration: MockConfigEntry
+) -> None:
+    """Test all device stream URLs are WebRTC-compatible (RTSP format)."""
+
+    data = device_data[init_integration.title]
+    entity_id = data["entity_id"]
+    camera_entity = get_camera_from_entity_id(hass, entity_id)
+
+    stream_url = await camera_entity.stream_source()
+
+    # All streams should be RTSP format for WebRTC compatibility
+    assert stream_url.startswith("rtsp://")
+
+    # Verify stream is compatible with RTSP-based WebRTC providers
+    mock_provider = MockWebRTCProvider()
+    assert mock_provider.async_is_supported(stream_url)
+
+
+@pytest.mark.parametrize("init_integration", ["DS-7608NXI-I2"], indirect=True)
+async def test_camera_capabilities_include_stream_types(
+    hass: HomeAssistant, init_integration: MockConfigEntry
+) -> None:
+    """Test camera capabilities include appropriate stream types."""
+
+    entity_id = "camera.ds_7608nxi_i0_0p_s0000000000ccrrj00000000wcvu_101"
+    camera_entity = get_camera_from_entity_id(hass, entity_id)
+
+    # Get camera capabilities
+    capabilities = camera_entity.camera_capabilities
+
+    # Should have frontend_stream_types in capabilities
+    assert capabilities.frontend_stream_types is not None
+    # HLS should always be available as baseline
+    assert StreamType.HLS in capabilities.frontend_stream_types
+
+
+@pytest.mark.parametrize("init_integration", ["DS-7608NXI-I2"], indirect=True)
+async def test_camera_webrtc_capabilities_with_provider(
+    hass: HomeAssistant, init_integration: MockConfigEntry
+) -> None:
+    """Test camera capabilities include WebRTC when provider is registered."""
+
+    entity_id = "camera.ds_7608nxi_i0_0p_s0000000000ccrrj00000000wcvu_101"
+    camera_entity = get_camera_from_entity_id(hass, entity_id)
+
+    # Register a mock WebRTC provider
+    mock_provider = MockWebRTCProvider()
+    unregister = async_register_webrtc_provider(hass, mock_provider)
+
+    # Refresh providers
+    await camera_entity.async_refresh_providers()
+
+    # Get camera capabilities
+    capabilities = camera_entity.camera_capabilities
+
+    # Should now include WebRTC as available stream type
+    assert StreamType.WEB_RTC in capabilities.frontend_stream_types
+
+    # Cleanup
+    unregister()
+
+
+@pytest.mark.parametrize("init_integration", ["DS-7608NXI-I2"], indirect=True)
+async def test_camera_stream_url_contains_authentication(
+    hass: HomeAssistant, init_integration: MockConfigEntry
+) -> None:
+    """Test that stream URL contains proper authentication for WebRTC providers."""
+
+    entity_id = "camera.ds_7608nxi_i0_0p_s0000000000ccrrj00000000wcvu_101"
+    camera_entity = get_camera_from_entity_id(hass, entity_id)
+
+    stream_url = await camera_entity.stream_source()
+
+    # Verify authentication is embedded in URL (required for go2rtc and similar)
+    # URL format: rtsp://username:password@host:port/path
+    assert "@" in stream_url
+    assert "u1:" in stream_url  # username from test config
+
+
+@pytest.mark.parametrize("init_integration", ["DS-7608NXI-I2"], indirect=True)
+async def test_camera_stream_url_port_configuration(
+    hass: HomeAssistant, init_integration: MockConfigEntry
+) -> None:
+    """Test that stream URL uses correct RTSP port from device configuration."""
+
+    entity_id = "camera.ds_7608nxi_i0_0p_s0000000000ccrrj00000000wcvu_101"
+    camera_entity = get_camera_from_entity_id(hass, entity_id)
+
+    stream_url = await camera_entity.stream_source()
+
+    # Verify correct RTSP port is used (10554 for this device)
+    assert ":10554/" in stream_url
+
+
+@pytest.mark.parametrize("init_integration", ["DS-7616NI-Q2"], indirect=True)
+async def test_camera_stream_url_default_port(
+    hass: HomeAssistant, init_integration: MockConfigEntry
+) -> None:
+    """Test that stream URL uses default RTSP port (554) when appropriate."""
+
+    entity_id = "camera.ds_7616ni_q2_00p0000000000ccrre00000000wcvu_101"
+    camera_entity = get_camera_from_entity_id(hass, entity_id)
+
+    stream_url = await camera_entity.stream_source()
+
+    # Verify default RTSP port 554 is used
+    assert ":554/" in stream_url
