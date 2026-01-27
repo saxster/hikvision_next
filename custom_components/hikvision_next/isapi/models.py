@@ -106,6 +106,8 @@ class CapabilitiesInfo:
     support_video_intercom: bool = False  # if device is a video doorbell/intercom
     input_ports: int = 0
     output_ports: int = 0
+    support_two_way_audio: bool = False  # if device supports two-way audio
+    two_way_audio_channels: int = 0  # number of two-way audio channels
 
 
 @dataclass
@@ -136,3 +138,12 @@ class ProtocolsInfo:
     """Holds info of supported protocols."""
 
     rtsp_port: int = 554
+
+
+@dataclass
+class TwoWayAudioChannelInfo:
+    """Holds info of a two-way audio channel."""
+
+    id: int
+    enabled: bool
+    audio_compression_type: str
