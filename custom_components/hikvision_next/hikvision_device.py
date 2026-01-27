@@ -31,7 +31,7 @@ from .isapi import (
     ISAPIForbiddenError,
     ISAPIUnauthorizedError,
 )
-from .isapi.const import EVENT_IO
+from .isapi.const import EVENT_IO, EVENT_VIDEOINTERCOM
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -121,9 +121,12 @@ class HikvisionDevice(ISAPIClient):
         """Get events info handled by integration (camera id:  NVR = None, camera > 0)."""
         events = []
 
-        if camera_id is None:  # NVR
+        if camera_id is None:  # NVR/Device-level events
             integration_supported_events = [
-                s for s in self.supported_events if (s.id in EVENTS and EVENTS[s.id].get("type") == EVENT_IO)
+                s for s in self.supported_events if (
+                    s.id in EVENTS and
+                    EVENTS[s.id].get("type") in (EVENT_IO, EVENT_VIDEOINTERCOM)
+                )
             ]
         else:  # Camera
             integration_supported_events = [
