@@ -106,6 +106,11 @@ class CapabilitiesInfo:
     support_video_intercom: bool = False  # if device is a video doorbell/intercom
     input_ports: int = 0
     output_ports: int = 0
+    # Active Deterrence capabilities
+    support_siren: bool = False
+    support_strobe: bool = False
+    support_voice: bool = False
+    audio_outputs: int = 0
     support_two_way_audio: bool = False  # if device supports two-way audio
     two_way_audio_channels: int = 0  # number of two-way audio channels
 

@@ -122,6 +122,14 @@ class ISAPIClient:
         self.capabilities.two_way_audio_channels = int(capabilities.get("voicetalkNums", 0))
         self.capabilities.support_two_way_audio = self.capabilities.two_way_audio_channels > 0
 
+        # Active Deterrence capabilities
+        self.capabilities.audio_outputs = int(deep_get(capabilities, "SysCap.AudioCap.audioOutputNums", 0))
+        self.capabilities.support_siren = await self._check_siren_support()
+        self.capabilities.support_strobe = str_to_bool(
+            deep_get(capabilities, "SysCap.IOCap.isSupportStrobeLamp", "false")
+        )
+        self.capabilities.support_voice = self.capabilities.audio_outputs > 0
+
         # Set if NVR based on whether more than 1 supported IP or analog cameras
         # Single IP camera will show 0 supported devices in total
         if self.capabilities.analog_cameras_inputs + self.capabilities.digital_cameras_inputs > 1:
@@ -685,6 +693,96 @@ class ISAPIClient:
         """Reboot device."""
         await self.request(PUT, "System/reboot", present="xml")
 
+    # Active Deterrence methods
+
+    async def _check_siren_support(self) -> bool:
+        """Check if device supports siren/audio alarm."""
+        try:
+            response = await self.request(GET, "Event/triggers/notifications/AudioAlarm?format=json")
+            return bool(response)
+        except Exception:
+            return False
+
+    async def trigger_siren(
+        self, duration: int = 10, audio_id: int = 1, volume: int = 50, alarm_times: int = 1
+    ) -> None:
+        """Trigger the siren/audio alarm on the device.
+
+        Args:
+            duration: Duration in seconds (1-300)
+            audio_id: ID of the audio file to play (1-10 for preset, negative for custom)
+            volume: Volume level (1-100)
+            alarm_times: Number of times to repeat the alarm
+        """
+        if not self.capabilities.support_siren:
+            raise ISAPIActiveDeterrenceNotSupportedError("siren")
+
+        data = {
+            "AudioAlarm": {
+                "audioID": str(audio_id),
+                "audioVolume": str(min(max(volume, 1), 100)),
+                "alarmTimes": str(alarm_times),
+                "durationTime": str(min(max(duration, 1), 300)),
+            }
+        }
+
+        await self.request(PUT, "Event/triggers/notifications/AudioAlarm?format=json", present="json", data=json.dumps(data))
+
+    async def trigger_strobe(
+        self, channel_id: int = 1, duration: int = 10, frequency: str = "medium"
+    ) -> None:
+        """Trigger the strobe/white light alarm on the device.
+
+        Args:
+            channel_id: Channel ID (usually 1 for single camera)
+            duration: Duration in seconds (1-300)
+            frequency: Strobe frequency - "low", "medium", "high", or "constant"
+        """
+        if not self.capabilities.support_strobe:
+            raise ISAPIActiveDeterrenceNotSupportedError("strobe")
+
+        valid_frequencies = ["low", "medium", "high", "constant"]
+        if frequency not in valid_frequencies:
+            frequency = "medium"
+
+        data = {
+            "WhiteLightAlarm": {
+                "channelID": str(channel_id),
+                "durationTime": str(min(max(duration, 1), 300)),
+                "frequency": frequency,
+            }
+        }
+
+        await self.request(
+            PUT,
+            f"Event/triggers/notifications/channels/{channel_id}/whiteLightAlarm?format=json",
+            present="json",
+            data=json.dumps(data),
+        )
+
+    async def play_voice(self, audio_id: int = 1, volume: int = 50, alarm_times: int = 1) -> None:
+        """Play a pre-recorded voice message on the device speaker.
+
+        Args:
+            audio_id: ID of the audio file to play (1-10 for preset alerts)
+            volume: Volume level (1-100)
+            alarm_times: Number of times to play the message
+        """
+        if not self.capabilities.support_voice:
+            raise ISAPIActiveDeterrenceNotSupportedError("voice")
+
+        # Voice playback uses the same audio alarm endpoint but with alert audio class
+        data = {
+            "AudioAlarm": {
+                "audioID": str(audio_id),
+                "audioVolume": str(min(max(volume, 1), 100)),
+                "alarmTimes": str(alarm_times),
+                "audioClass": "alertAudio",
+                "alertAudioID": str(audio_id),
+            }
+        }
+
+        await self.request(PUT, "Event/triggers/notifications/AudioAlarm?format=json", present="json", data=json.dumps(data))
     async def get_two_way_audio_channels(self) -> list[TwoWayAudioChannelInfo]:
         """Get two-way audio channels."""
         channels = []
@@ -948,3 +1046,12 @@ class ISAPIForbiddenError(Exception):
         self.message = f"Forbidden request {ex.request.url}, check user permissions."
         self.response = ex.response
         _LOGGER.warning(self.message)
+
+
+class ISAPIActiveDeterrenceNotSupportedError(Exception):
+    """Active Deterrence feature not supported."""
+
+    def __init__(self, feature: str, *args) -> None:
+        """Initialize exception."""
+        self.feature = feature
+        self.message = f"Active Deterrence feature '{feature}' is not supported by this device."
