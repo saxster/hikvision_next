@@ -19,6 +19,7 @@ from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME, CONF_VE
 
 from . import HikvisionConfigEntry
 from .const import (
+    ALARM_SERVER_PATH,
     CONF_ALARM_SERVER_HOST,
     CONF_SET_ALARM_SERVER,
     DOMAIN,
@@ -75,6 +76,13 @@ class HikvisionConfigFlow(ConfigFlow, domain=DOMAIN):
 
                 device = HikvisionDevice(self.hass, data=user_input_validated)
                 await device.get_device_info()
+
+                # Configure alarm server during setup if enabled
+                if user_input_validated.get(CONF_SET_ALARM_SERVER) and user_input_validated.get(CONF_ALARM_SERVER_HOST):
+                    await device.set_alarm_server(
+                        user_input_validated[CONF_ALARM_SERVER_HOST],
+                        ALARM_SERVER_PATH,
+                    )
 
             except ISAPIForbiddenError:
                 errors["base"] = "insufficient_permission"

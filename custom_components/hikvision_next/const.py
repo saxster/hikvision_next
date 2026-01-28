@@ -25,8 +25,17 @@ ACTION_UPDATE_SNAPSHOT = "update_snapshot"
 ACTION_TRIGGER_SIREN = "trigger_siren"
 ACTION_TRIGGER_STROBE = "trigger_strobe"
 ACTION_PLAY_VOICE = "play_voice"
+ACTION_START_TWO_WAY_AUDIO = "start_two_way_audio"
+ACTION_STOP_TWO_WAY_AUDIO = "stop_two_way_audio"
+ACTION_PTZ_GOTO_PRESET = "ptz_goto_preset"
+ACTION_PTZ_SET_PATROL = "ptz_set_patrol"
 
 HIKVISION_EVENT = f"{DOMAIN}_event"
+
+# Auto-reset timeout in seconds for event-based binary sensors
+# When an event is received, the sensor will automatically reset to OFF
+# after this timeout if no new events are received
+EVENT_AUTO_RESET_TIMEOUT: Final = 5
 
 EVENTS = {
     "motiondetection": {
@@ -68,5 +77,25 @@ EVENTS = {
     "pir": {
         **ISAPI_EVENTS["pir"],
         "device_class": BinarySensorDeviceClass.MOTION,
+    },
+    "visitorcall": {
+        **ISAPI_EVENTS["visitorcall"],
+        "device_class": BinarySensorDeviceClass.OCCUPANCY,
+    },
+    "facedetection": {
+        **ISAPI_EVENTS["facedetection"],
+        "device_class": BinarySensorDeviceClass.MOTION,
+    },
+    "audioexception": {
+        **ISAPI_EVENTS["audioexception"],
+        "device_class": BinarySensorDeviceClass.SOUND,
+    },
+    "defocus": {
+        **ISAPI_EVENTS["defocus"],
+        "device_class": BinarySensorDeviceClass.PROBLEM,
+    },
+    "unattendedbaggage": {
+        **ISAPI_EVENTS["unattendedbaggage"],
+        "device_class": BinarySensorDeviceClass.PROBLEM,
     },
 }

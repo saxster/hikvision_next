@@ -1,5 +1,3 @@
-"Integration actions."
-
 from httpx import HTTPStatusError
 import voluptuous as vol
 
@@ -17,10 +15,18 @@ from .const import (
     ACTION_REBOOT,
     ACTION_TRIGGER_SIREN,
     ACTION_TRIGGER_STROBE,
+    ACTION_START_TWO_WAY_AUDIO,
+    ACTION_STOP_TWO_WAY_AUDIO,
+    ACTION_PTZ_GOTO_PRESET,
+    ACTION_PTZ_SET_PATROL,
     ATTR_CONFIG_ENTRY_ID,
     DOMAIN,
 )
-from .isapi import ISAPIActiveDeterrenceNotSupportedError, ISAPIForbiddenError, ISAPIUnauthorizedError
+from .isapi import (
+    ISAPIActiveDeterrenceNotSupportedError,
+    ISAPIForbiddenError,
+    ISAPIUnauthorizedError,
+)
 
 ACTION_ISAPI_REQUEST_SCHEMA = vol.Schema(
     {
@@ -56,6 +62,30 @@ ACTION_PLAY_VOICE_SCHEMA = vol.Schema(
         vol.Optional("audio_id", default=1): vol.Coerce(int),
         vol.Optional("volume", default=50): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
         vol.Optional("alarm_times", default=1): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
+    }
+)
+
+ACTION_TWO_WAY_AUDIO_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_CONFIG_ENTRY_ID): str,
+        vol.Optional("channel_id", default=1): int,
+    }
+)
+
+ACTION_PTZ_GOTO_PRESET_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_CONFIG_ENTRY_ID): str,
+        vol.Required("channel_id"): vol.Coerce(int),
+        vol.Required("preset_id"): vol.Coerce(int),
+    }
+)
+
+ACTION_PTZ_SET_PATROL_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_CONFIG_ENTRY_ID): str,
+        vol.Required("channel_id"): vol.Coerce(int),
+        vol.Required("patrol_id"): vol.Coerce(int),
+        vol.Required("enabled"): bool,
     }
 )
 
@@ -114,55 +144,3 @@ def setup_services(hass: HomeAssistant) -> None:
         channel_id = call.data.get("channel_id", 1)
         duration = call.data.get("duration", 10)
         frequency = call.data.get("frequency", "medium")
-        try:
-            await device.trigger_strobe(channel_id=channel_id, duration=duration, frequency=frequency)
-        except ISAPIActiveDeterrenceNotSupportedError as ex:
-            raise HomeAssistantError(ex.message) from ex
-        except (HTTPStatusError, ISAPIForbiddenError, ISAPIUnauthorizedError) as ex:
-            raise HomeAssistantError(ex.response.content) from ex
-
-    async def handle_play_voice(call: ServiceCall) -> None:
-        """Handle the play voice message action call."""
-        entry_id = call.data.get(ATTR_CONFIG_ENTRY_ID)
-        entry = hass.config_entries.async_get_entry(entry_id)
-        device = entry.runtime_data
-        audio_id = call.data.get("audio_id", 1)
-        volume = call.data.get("volume", 50)
-        alarm_times = call.data.get("alarm_times", 1)
-        try:
-            await device.play_voice(audio_id=audio_id, volume=volume, alarm_times=alarm_times)
-        except ISAPIActiveDeterrenceNotSupportedError as ex:
-            raise HomeAssistantError(ex.message) from ex
-        except (HTTPStatusError, ISAPIForbiddenError, ISAPIUnauthorizedError) as ex:
-            raise HomeAssistantError(ex.response.content) from ex
-
-    hass.services.async_register(
-        DOMAIN,
-        ACTION_REBOOT,
-        handle_reboot,
-    )
-    hass.services.async_register(
-        DOMAIN,
-        ACTION_ISAPI_REQUEST,
-        handle_isapi_request,
-        schema=ACTION_ISAPI_REQUEST_SCHEMA,
-        supports_response=SupportsResponse.ONLY,
-    )
-    hass.services.async_register(
-        DOMAIN,
-        ACTION_TRIGGER_SIREN,
-        handle_trigger_siren,
-        schema=ACTION_TRIGGER_SIREN_SCHEMA,
-    )
-    hass.services.async_register(
-        DOMAIN,
-        ACTION_TRIGGER_STROBE,
-        handle_trigger_strobe,
-        schema=ACTION_TRIGGER_STROBE_SCHEMA,
-    )
-    hass.services.async_register(
-        DOMAIN,
-        ACTION_PLAY_VOICE,
-        handle_play_voice,
-        schema=ACTION_PLAY_VOICE_SCHEMA,
-    )

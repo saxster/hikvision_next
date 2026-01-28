@@ -11,6 +11,7 @@ EVENT_BASIC: Final = "basic"
 EVENT_IO: Final = "io"
 EVENT_SMART: Final = "smart"
 EVENT_PIR: Final = "pir"
+EVENT_VIDEOINTERCOM: Final = "videointercom"
 EVENTS = {
     "motiondetection": {
         "type": EVENT_BASIC,
@@ -69,6 +70,31 @@ EVENTS = {
         "slug": "WLAlarm/PIR",
         "direct_node": "PIRAlarm",
     },
+    "visitorcall": {
+        "type": EVENT_BASIC,
+        "label": "Visitor Call",
+        "slug": "visitorCall",
+    },
+    "facedetection": {
+        "type": EVENT_SMART,
+        "label": "Face Detection",
+        "slug": "FaceDetection",
+    },
+    "audioexception": {
+        "type": EVENT_SMART,
+        "label": "Audio Exception",
+        "slug": "AudioException",
+    },
+    "defocus": {
+        "type": EVENT_BASIC,
+        "label": "Defocus Detection",
+        "slug": "defocus",
+    },
+    "unattendedbaggage": {
+        "type": EVENT_SMART,
+        "label": "Unattended Baggage",
+        "slug": "UnattendedBaggage",
+    },
 }
 
 STREAM_TYPE = {
@@ -84,6 +110,8 @@ EVENTS_ALTERNATE_ID = {
     "thermometry": "motiondetection",
     "shelteralarm": "tamperdetection",
     "VMDHumanVehicle": "motiondetection",
+    "doorbellpress": "videointercomevent",
+    "callstart": "videointercomevent",
 }
 
 MUTEX_ALTERNATE_ID = {"motiondetection": "VMDHumanVehicle"}
