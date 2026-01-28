@@ -21,6 +21,7 @@ from .const import (
     EVENT_BASIC,
     EVENT_IO,
     EVENT_PIR,
+    EVENT_VIDEOINTERCOM,
     EVENTS,
     EVENTS_ALTERNATE_ID,
     GET,
@@ -42,6 +43,7 @@ from .models import (
     ProtocolsInfo,
     StorageInfo,
     TwoWayAudioInfo,
+    TwoWayAudioChannelInfo,
 )
 from .utils import bool_to_str, deep_get, parse_isapi_response, str_to_bool
 
@@ -83,6 +85,7 @@ class ISAPIClient:
         self.protocols = ProtocolsInfo()
         self.two_way_audio: list[TwoWayAudioInfo] = []
         self.pending_initialization = False
+        self.two_way_audio_channels: list[TwoWayAudioChannelInfo] = []
 
     async def get_device_info(self):
         """Get device info."""
@@ -115,6 +118,19 @@ class ISAPIClient:
         self.capabilities.input_ports = int(deep_get(capabilities, "SysCap.IOCap.IOInputPortNums", 0))
         self.capabilities.output_ports = int(deep_get(capabilities, "SysCap.IOCap.IOOutputPortNums", 0))
         self.capabilities.support_alarm_server = bool(await self.get_alarm_server())
+        self.capabilities.support_video_intercom = await self._check_video_intercom_support()
+
+        # Check two-way audio support
+        self.capabilities.two_way_audio_channels = int(capabilities.get("voicetalkNums", 0))
+        self.capabilities.support_two_way_audio = self.capabilities.two_way_audio_channels > 0
+
+        # Active Deterrence capabilities
+        self.capabilities.audio_outputs = int(deep_get(capabilities, "SysCap.AudioCap.audioOutputNums", 0))
+        self.capabilities.support_siren = await self._check_siren_support()
+        self.capabilities.support_strobe = str_to_bool(
+            deep_get(capabilities, "SysCap.IOCap.isSupportStrobeLamp", "false")
+        )
+        self.capabilities.support_voice = self.capabilities.audio_outputs > 0
 
         # Check for two-way audio support based on voicetalkNums capability
         voicetalk_nums = int(capabilities.get("voicetalkNums", 0))
@@ -138,6 +154,18 @@ class ISAPIClient:
         if self.capabilities.support_two_way_audio:
             with suppress(Exception):
                 self.two_way_audio = await self.get_two_way_audio_channels()
+    async def _check_video_intercom_support(self) -> bool:
+        """Check if the device supports VideoIntercom (doorbell) functionality."""
+        try:
+            # Try to get VideoIntercom call status - if successful, device is a doorbell
+            call_status = await self.request(GET, "VideoIntercom/callStatus")
+            return bool(call_status and call_status.get("CallStatus"))
+        except Exception:
+            return False
+        # Fetch two-way audio channels if supported
+        if self.capabilities.support_two_way_audio:
+            with suppress(Exception):
+                self.two_way_audio_channels = await self.get_two_way_audio_channels()
 
     async def get_cameras(self):
         """Get camera objects for all connected cameras."""
@@ -336,6 +364,21 @@ class ISAPIClient:
                         if event := create_event_info(event_trigger):
                             events.append(event)
 
+        # Check for VideoIntercom support (doorbells)
+        if self.capabilities.support_video_intercom:
+            # Add doorbell event for video intercom devices
+            if not [e for e in events if e.id == "videointercomevent"]:
+                events.append(
+                    EventInfo(
+                        channel_id=0,
+                        io_port_id=0,
+                        id="videointercomevent",
+                        url=self.get_event_url("videointercomevent", 0, 0, False),
+                        is_proxy=False,
+                        notifications=["center"],
+                    )
+                )
+
         return events
 
     def get_event_url(self, event_id: str, channel_id: int, io_port_id: int, is_proxy: bool) -> str | None:
@@ -358,8 +401,8 @@ class ISAPIClient:
                 url = f"ContentMgmt/IOProxy/{slug}/{io_port_id}"
             else:
                 url = f"System/IO/{slug}/{io_port_id}"
-        elif event_type == EVENT_PIR:
-            # ISAPI/WLAlarm/PIR
+        elif event_type in (EVENT_PIR, EVENT_VIDEOINTERCOM):
+            # Device-level events that use slug directly (e.g., ISAPI/WLAlarm/PIR, ISAPI/VideoIntercom/callStatus)
             url = slug
         else:
             url = f"Smart/{slug}/{channel_id}"
@@ -732,6 +775,159 @@ class ISAPIClient:
         """Reboot device."""
         await self.request(PUT, "System/reboot", present="xml")
 
+    # Active Deterrence methods
+
+    async def _check_siren_support(self) -> bool:
+        """Check if device supports siren/audio alarm."""
+        try:
+            response = await self.request(GET, "Event/triggers/notifications/AudioAlarm?format=json")
+            return bool(response)
+        except Exception:
+            return False
+
+    async def trigger_siren(
+        self, duration: int = 10, audio_id: int = 1, volume: int = 50, alarm_times: int = 1
+    ) -> None:
+        """Trigger the siren/audio alarm on the device.
+
+        Args:
+            duration: Duration in seconds (1-300)
+            audio_id: ID of the audio file to play (1-10 for preset, negative for custom)
+            volume: Volume level (1-100)
+            alarm_times: Number of times to repeat the alarm
+        """
+        if not self.capabilities.support_siren:
+            raise ISAPIActiveDeterrenceNotSupportedError("siren")
+
+        data = {
+            "AudioAlarm": {
+                "audioID": str(audio_id),
+                "audioVolume": str(min(max(volume, 1), 100)),
+                "alarmTimes": str(alarm_times),
+                "durationTime": str(min(max(duration, 1), 300)),
+            }
+        }
+
+        await self.request(PUT, "Event/triggers/notifications/AudioAlarm?format=json", present="json", data=json.dumps(data))
+
+    async def trigger_strobe(
+        self, channel_id: int = 1, duration: int = 10, frequency: str = "medium"
+    ) -> None:
+        """Trigger the strobe/white light alarm on the device.
+
+        Args:
+            channel_id: Channel ID (usually 1 for single camera)
+            duration: Duration in seconds (1-300)
+            frequency: Strobe frequency - "low", "medium", "high", or "constant"
+        """
+        if not self.capabilities.support_strobe:
+            raise ISAPIActiveDeterrenceNotSupportedError("strobe")
+
+        valid_frequencies = ["low", "medium", "high", "constant"]
+        if frequency not in valid_frequencies:
+            frequency = "medium"
+
+        data = {
+            "WhiteLightAlarm": {
+                "channelID": str(channel_id),
+                "durationTime": str(min(max(duration, 1), 300)),
+                "frequency": frequency,
+            }
+        }
+
+        await self.request(
+            PUT,
+            f"Event/triggers/notifications/channels/{channel_id}/whiteLightAlarm?format=json",
+            present="json",
+            data=json.dumps(data),
+        )
+
+    async def play_voice(self, audio_id: int = 1, volume: int = 50, alarm_times: int = 1) -> None:
+        """Play a pre-recorded voice message on the device speaker.
+
+        Args:
+            audio_id: ID of the audio file to play (1-10 for preset alerts)
+            volume: Volume level (1-100)
+            alarm_times: Number of times to play the message
+        """
+        if not self.capabilities.support_voice:
+            raise ISAPIActiveDeterrenceNotSupportedError("voice")
+
+        # Voice playback uses the same audio alarm endpoint but with alert audio class
+        data = {
+            "AudioAlarm": {
+                "audioID": str(audio_id),
+                "audioVolume": str(min(max(volume, 1), 100)),
+                "alarmTimes": str(alarm_times),
+                "audioClass": "alertAudio",
+                "alertAudioID": str(audio_id),
+            }
+        }
+
+        await self.request(PUT, "Event/triggers/notifications/AudioAlarm?format=json", present="json", data=json.dumps(data))
+    async def get_two_way_audio_channels(self) -> list[TwoWayAudioChannelInfo]:
+        """Get two-way audio channels."""
+        channels = []
+        response = await self.request(GET, "System/TwoWayAudio/channels")
+        channel_list = deep_get(response, "TwoWayAudioChannelList.TwoWayAudioChannel", [])
+        if not isinstance(channel_list, list):
+            channel_list = [channel_list]
+        for channel in channel_list:
+            if channel is not None and isinstance(channel, dict):
+                channels.append(
+                    TwoWayAudioChannelInfo(
+                        id=int(channel.get("id", 1)),
+                        enabled=str_to_bool(channel.get("enabled", "false")),
+                        audio_compression_type=channel.get("audioCompressionType", "G.711ulaw"),
+                    )
+                )
+        return channels
+
+    async def start_two_way_audio(self, channel_id: int = 1) -> None:
+        """Start two-way audio session.
+
+        Opens a two-way audio channel on the device. This signals the device
+        to start listening for audio input.
+        """
+        url = f"System/TwoWayAudio/channels/{channel_id}/open"
+        await self.request(PUT, url, present="xml")
+
+    async def stop_two_way_audio(self, channel_id: int = 1) -> None:
+        """Stop two-way audio session.
+
+        Closes the two-way audio channel on the device.
+        """
+        url = f"System/TwoWayAudio/channels/{channel_id}/close"
+        await self.request(PUT, url, present="xml")
+    async def ptz_goto_preset(self, channel_id: int, preset_id: int):
+        """Move PTZ camera to a preset position.
+
+        Args:
+            channel_id: Camera channel ID (usually 1 for standalone cameras, 101+ for NVR).
+            preset_id: Preset position number to move to.
+        """
+        url = f"PTZCtrl/channels/{channel_id}/presets/{preset_id}/goto"
+        await self.request(PUT, url, present="xml")
+
+    async def ptz_set_patrol(self, channel_id: int, patrol_id: int, enabled: bool):
+        """Start or stop a PTZ patrol.
+
+        Args:
+            channel_id: Camera channel ID (usually 1 for standalone cameras, 101+ for NVR).
+            patrol_id: Patrol ID to control.
+            enabled: True to start patrol, False to stop.
+        """
+        url = f"PTZCtrl/channels/{channel_id}/patrols/{patrol_id}/status"
+        status = "start" if enabled else "stop"
+        data = {
+            "PTZPatrolStatus": {
+                "enabled": "true" if enabled else "false",
+                "status": status,
+            }
+        }
+        xml = xmltodict.unparse(data)
+        await self.request(PUT, url, present="xml", data=xml)
+
     @staticmethod
     def parse_event_notification(xml: str) -> AlertInfo:
         """Parse incoming EventNotificationAlert XML message."""
@@ -932,3 +1128,12 @@ class ISAPIForbiddenError(Exception):
         self.message = f"Forbidden request {ex.request.url}, check user permissions."
         self.response = ex.response
         _LOGGER.warning(self.message)
+
+
+class ISAPIActiveDeterrenceNotSupportedError(Exception):
+    """Active Deterrence feature not supported."""
+
+    def __init__(self, feature: str, *args) -> None:
+        """Initialize exception."""
+        self.feature = feature
+        self.message = f"Active Deterrence feature '{feature}' is not supported by this device."

@@ -1,0 +1,498 @@
+{
+  "data": {
+    "ISAPI": {
+      "System/deviceInfo": {
+        "response": {
+          "DeviceInfo": {
+            "@version": "2.0",
+            "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+            "deviceName": "Front Door",
+            "deviceID": "00000000-0000-0000-0000-000000000001",
+            "deviceDescription": "Video Intercom Door Station",
+            "deviceLocation": "",
+            "systemContact": "Hikvision.China",
+            "model": "DS-KV8113-WME1",
+            "serialNumber": "DS-KV8113-WME100000000AAWRDB0000000",
+            "macAddress": "aa:bb:cc:dd:ee:ff",
+            "firmwareVersion": "V2.2.62",
+            "firmwareReleasedDate": "build 231101",
+            "encoderVersion": "V7.3",
+            "encoderReleasedDate": "build 231101",
+            "bootVersion": "V1.0.0",
+            "bootReleasedDate": "100101",
+            "hardwareVersion": "0x0",
+            "deviceType": "VideoIntercom",
+            "telecontrolID": "88",
+            "supportBeep": "false",
+            "supportVideoLoss": "false",
+            "firmwareVersionInfo": "B-R-VIC-0",
+            "manufacturer": "hikvision",
+            "subSerialNumber": "DB0000000",
+            "OEMCode": "1"
+          }
+        }
+      },
+      "System/capabilities": {
+        "response": {
+          "DeviceCap": {
+            "@version": "2.0",
+            "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+            "SysCap": {
+              "isSupportDst": "true",
+              "NetworkCap": {
+                "@version": "2.0",
+                "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+                "isSupportWireless": "true",
+                "isSupportPPPoE": "false",
+                "isSupportBond": "false",
+                "isSupport802_1x": "false",
+                "isSupportNtp": "true",
+                "isSupportFtp": "false",
+                "isSupportUpnp": "true",
+                "isSupportDdns": "false",
+                "isSupportHttps": "true"
+              },
+              "IOCap": {
+                "@version": "2.0",
+                "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+                "isSupportStrobeLamp": "false"
+              },
+              "VideoCap": {
+                "@version": "2.0",
+                "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+                "videoInputPortNums": "0",
+                "videoOutputPortNums": "0"
+              },
+              "AudioCap": {
+                "@version": "2.0",
+                "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+                "audioInputNums": "1",
+                "audioOutputNums": "1"
+              },
+              "isSupportExternalDevice": "false",
+              "isSupportSubscribeEvent": "true",
+              "isSupportDiagnosedData": "false",
+              "isSupportMetadata": "false"
+            },
+            "voicetalkNums": "1",
+            "isSupportSnapshot": "true",
+            "SecurityCap": {
+              "@version": "2.0",
+              "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+              "supportUserNums": "32",
+              "userBondIpNums": "0",
+              "userBondMacNums": "0"
+            },
+            "EventCap": {
+              "@version": "2.0",
+              "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+              "isSupportHDFull": "false",
+              "isSupportHDError": "false",
+              "isSupportNicBroken": "false",
+              "isSupportIpConflict": "false",
+              "isSupportIllAccess": "false",
+              "isSupportViException": "false",
+              "isSupportViMismatch": "false",
+              "isSupportRecordException": "false",
+              "isSupportTriggerFocus": "false",
+              "isSupportMotionDetection": "true",
+              "isSupportVideoLoss": "false",
+              "isSupportTamperDetection": "false"
+            },
+            "RacmCap": {
+              "@version": "2.0",
+              "@xmlns": "http://www.hikvision.com/ver20/XMLSchema"
+            },
+            "SmartCap": {
+              "@version": "2.0",
+              "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+              "isSupportROI": "false",
+              "isSupportAudioDetection": "false",
+              "isSupportFaceDetect": "false",
+              "isSupportLineDetection": "false",
+              "isSupportFieldDetection": "false",
+              "isSupportRegionEntrance": "false",
+              "isSupportRegionExiting": "false",
+              "isSupportLoitering": "false",
+              "isSupportGroup": "false",
+              "isSupportRapidMove": "false",
+              "isSupportParking": "false",
+              "isSupportUnattendedBaggage": "false",
+              "isSupportAttendedBaggage": "false",
+              "isSupportSmartCalibration": "false",
+              "isSupportIntelliTrace": "false",
+              "isSupportPeopleDetection": "false",
+              "isSupportDefocusDetection": "false",
+              "isSupportSceneChangeDetection": "false",
+              "isSupportStorageDetection": "false",
+              "isSupportChannelResource": "false"
+            },
+            "WLAlarmCap": {
+              "@version": "2.0",
+              "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+              "isSupportTeleControl": "false",
+              "isSupportPIR": "false",
+              "isSupportWLSensors": "false",
+              "isSupportCallHelp": "false",
+              "WLSensorsNum": "0"
+            },
+            "isSupportGIS": "false",
+            "isSupportCompass": "false"
+          }
+        }
+      },
+      "System/IO/inputs/1/status": {
+        "status_code": 403
+      },
+      "System/IO/outputs/1/status": {
+        "status_code": 403
+      },
+      "System/Holidays": {
+        "status_code": 404
+      },
+      "System/Video/inputs/channels": {
+        "response": {
+          "VideoInputChannelList": {
+            "@version": "2.0",
+            "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+            "VideoInputChannel": {
+              "@version": "2.0",
+              "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+              "id": "1",
+              "inputPort": "1",
+              "name": "Front Door",
+              "videoFormat": "PAL"
+            }
+          }
+        }
+      },
+      "ContentMgmt/InputProxy/channels": {
+        "status_code": 403
+      },
+      "ContentMgmt/Storage": {
+        "status_code": 403
+      },
+      "Security/adminAccesses": {
+        "response": {
+          "AdminAccessProtocolList": {
+            "@version": "2.0",
+            "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+            "AdminAccessProtocol": [
+              {
+                "@version": "2.0",
+                "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+                "id": "1",
+                "enabled": "true",
+                "protocol": "HTTP",
+                "portNo": "80"
+              },
+              {
+                "@version": "2.0",
+                "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+                "id": "2",
+                "enabled": "true",
+                "protocol": "HTTPS",
+                "portNo": "443"
+              },
+              {
+                "@version": "2.0",
+                "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+                "id": "4",
+                "enabled": "true",
+                "protocol": "RTSP",
+                "portNo": "554"
+              }
+            ]
+          }
+        }
+      },
+      "Event/triggers": {
+        "response": {
+          "EventTriggerList": {
+            "@version": "2.0",
+            "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+            "EventTrigger": [
+              {
+                "id": "VMD-1",
+                "eventType": "VMD",
+                "eventDescription": "VMD Event trigger Information",
+                "videoInputChannelID": "1",
+                "dynVideoInputChannelID": "1",
+                "EventTriggerNotificationList": {
+                  "EventTriggerNotification": {
+                    "id": "center",
+                    "notificationMethod": "center",
+                    "notificationRecurrence": "beginning"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "Event/notification/httpHosts": {
+        "response": {
+          "HttpHostNotificationList": {
+            "@version": "2.0",
+            "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+            "HttpHostNotification": [
+              {
+                "@version": "2.0",
+                "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+                "id": "1",
+                "url": "/api/hikvision",
+                "protocolType": "HTTP",
+                "parameterFormatType": "XML",
+                "addressingFormatType": "ipaddress",
+                "ipAddress": "1.0.0.159",
+                "portNo": "8123",
+                "userName": null,
+                "httpAuthenticationMethod": "none",
+                "httpBroken": "false"
+              }
+            ]
+          }
+        }
+      },
+      "VideoIntercom/callStatus": {
+        "response": {
+          "CallStatus": {
+            "@version": "2.0",
+            "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+            "status": "idle"
+          }
+        }
+      },
+      "Streaming/channels/101": {
+        "response": {
+          "StreamingChannel": {
+            "@version": "2.0",
+            "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+            "id": "101",
+            "channelName": "Front Door",
+            "enabled": "true",
+            "Transport": {
+              "maxPacketSize": "1000",
+              "ControlProtocolList": {
+                "ControlProtocol": [
+                  {
+                    "streamingTransport": "RTSP"
+                  },
+                  {
+                    "streamingTransport": "HTTP"
+                  }
+                ]
+              },
+              "Unicast": {
+                "enabled": "true",
+                "rtpTransportType": "RTP/TCP"
+              }
+            },
+            "Video": {
+              "enabled": "true",
+              "videoInputChannelID": "1",
+              "videoCodecType": "H.264",
+              "videoScanType": "progressive",
+              "videoResolutionWidth": "1920",
+              "videoResolutionHeight": "1080",
+              "videoQualityControlType": "VBR",
+              "constantBitRate": "4096",
+              "fixedQuality": "80",
+              "vbrUpperCap": "4096",
+              "vbrLowerCap": "32",
+              "maxFrameRate": "2500",
+              "keyFrameInterval": "2000",
+              "snapShotImageType": "JPEG",
+              "H264Profile": "Main",
+              "GovLength": "50"
+            },
+            "Audio": {
+              "enabled": "true",
+              "audioInputChannelID": "1",
+              "audioCompressionType": "G.711ulaw"
+            }
+          }
+        }
+      },
+      "Streaming/channels/102": {
+        "response": {
+          "StreamingChannel": {
+            "@version": "2.0",
+            "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+            "id": "102",
+            "channelName": "Front Door",
+            "enabled": "true",
+            "Transport": {
+              "maxPacketSize": "1000",
+              "ControlProtocolList": {
+                "ControlProtocol": [
+                  {
+                    "streamingTransport": "RTSP"
+                  },
+                  {
+                    "streamingTransport": "HTTP"
+                  }
+                ]
+              },
+              "Unicast": {
+                "enabled": "true",
+                "rtpTransportType": "RTP/TCP"
+              }
+            },
+            "Video": {
+              "enabled": "true",
+              "videoInputChannelID": "1",
+              "videoCodecType": "H.264",
+              "videoScanType": "progressive",
+              "videoResolutionWidth": "640",
+              "videoResolutionHeight": "360",
+              "videoQualityControlType": "VBR",
+              "constantBitRate": "512",
+              "fixedQuality": "60",
+              "vbrUpperCap": "512",
+              "vbrLowerCap": "32",
+              "maxFrameRate": "1500",
+              "keyFrameInterval": "3000",
+              "snapShotImageType": "JPEG",
+              "H264Profile": "Baseline",
+              "GovLength": "45"
+            },
+            "Audio": {
+              "enabled": "true",
+              "audioInputChannelID": "1",
+              "audioCompressionType": "G.711ulaw"
+            }
+          }
+        }
+      },
+      "Streaming/channels/103": {
+        "status_code": 404
+      },
+      "Streaming/channels/104": {
+        "status_code": 404
+      },
+      "System/Video/inputs/channels/1/motionDetection": {
+        "response": {
+          "MotionDetection": {
+            "@version": "2.0",
+            "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+            "enabled": "true",
+            "enableHighlight": "false",
+            "samplingInterval": "2",
+            "startTriggerTime": "500",
+            "endTriggerTime": "500",
+            "regionType": "grid",
+            "Grid": {
+              "rowGranularity": "18",
+              "columnGranularity": "22"
+            }
+          }
+        }
+      },
+      "Streaming/channels": {
+        "response": {
+          "StreamingChannelList": {
+            "@version": "2.0",
+            "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+            "StreamingChannel": [
+              {
+                "@version": "2.0",
+                "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+                "id": "101",
+                "channelName": "Front Door",
+                "enabled": "true",
+                "Transport": {
+                  "maxPacketSize": "1000",
+                  "ControlProtocolList": {
+                    "ControlProtocol": [
+                      {
+                        "streamingTransport": "RTSP"
+                      },
+                      {
+                        "streamingTransport": "HTTP"
+                      }
+                    ]
+                  },
+                  "Unicast": {
+                    "enabled": "true",
+                    "rtpTransportType": "RTP/TCP"
+                  }
+                },
+                "Video": {
+                  "enabled": "true",
+                  "videoInputChannelID": "1",
+                  "videoCodecType": "H.264",
+                  "videoScanType": "progressive",
+                  "videoResolutionWidth": "1920",
+                  "videoResolutionHeight": "1080",
+                  "videoQualityControlType": "VBR",
+                  "constantBitRate": "4096",
+                  "fixedQuality": "80",
+                  "vbrUpperCap": "4096",
+                  "vbrLowerCap": "32",
+                  "maxFrameRate": "2500",
+                  "keyFrameInterval": "2000",
+                  "snapShotImageType": "JPEG",
+                  "H264Profile": "Main",
+                  "GovLength": "50"
+                },
+                "Audio": {
+                  "enabled": "true",
+                  "audioInputChannelID": "1",
+                  "audioCompressionType": "G.711ulaw"
+                }
+              },
+              {
+                "@version": "2.0",
+                "@xmlns": "http://www.hikvision.com/ver20/XMLSchema",
+                "id": "102",
+                "channelName": "Front Door",
+                "enabled": "true",
+                "Transport": {
+                  "maxPacketSize": "1000",
+                  "ControlProtocolList": {
+                    "ControlProtocol": [
+                      {
+                        "streamingTransport": "RTSP"
+                      },
+                      {
+                        "streamingTransport": "HTTP"
+                      }
+                    ]
+                  },
+                  "Unicast": {
+                    "enabled": "true",
+                    "rtpTransportType": "RTP/TCP"
+                  }
+                },
+                "Video": {
+                  "enabled": "true",
+                  "videoInputChannelID": "1",
+                  "videoCodecType": "H.264",
+                  "videoScanType": "progressive",
+                  "videoResolutionWidth": "640",
+                  "videoResolutionHeight": "360",
+                  "videoQualityControlType": "VBR",
+                  "constantBitRate": "512",
+                  "fixedQuality": "60",
+                  "vbrUpperCap": "512",
+                  "vbrLowerCap": "32",
+                  "maxFrameRate": "1500",
+                  "keyFrameInterval": "3000",
+                  "snapShotImageType": "JPEG",
+                  "H264Profile": "Baseline",
+                  "GovLength": "45"
+                },
+                "Audio": {
+                  "enabled": "true",
+                  "audioInputChannelID": "1",
+                  "audioCompressionType": "G.711ulaw"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

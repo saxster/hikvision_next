@@ -1,4 +1,5 @@
 from .isapi import (  # noqa: F401
+    ISAPIActiveDeterrenceNotSupportedError,
     ISAPIClient,
     ISAPIForbiddenError,
     ISAPISetEventStateMutexError,
@@ -12,4 +13,5 @@ from .models import (  # noqa: F401
     IPCamera,
     StorageInfo,
     TwoWayAudioInfo,
+    TwoWayAudioChannelInfo,
 )

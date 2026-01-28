@@ -62,3 +62,258 @@ isapi_request:
       selector:
         text:
           multiline: true
+
+# Active Deterrence services
+trigger_siren:
+  name: Trigger Siren
+  description: "Trigger the siren/audio alarm on compatible Hikvision cameras with Active Deterrence features."
+  fields:
+    config_entry_id:
+      required: true
+      name: "Device"
+      description: "The Hikvision device with siren capability."
+      selector:
+        config_entry:
+          integration: hikvision_next
+    duration:
+      required: false
+      name: "Duration"
+      description: "Duration in seconds (1-300). Default is 10 seconds."
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 300
+          unit_of_measurement: "seconds"
+    audio_id:
+      required: false
+      name: "Audio ID"
+      description: "ID of the audio file to play (1-10 for preset alerts). Default is 1."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 10
+    volume:
+      required: false
+      name: "Volume"
+      description: "Volume level (1-100). Default is 50."
+      default: 50
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+    alarm_times:
+      required: false
+      name: "Alarm Times"
+      description: "Number of times to repeat the alarm (1-10). Default is 1."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 10
+
+trigger_strobe:
+  name: Trigger Strobe
+  description: "Trigger the strobe/white light alarm on compatible Hikvision cameras with Active Deterrence features."
+  fields:
+    config_entry_id:
+      required: true
+      name: "Device"
+      description: "The Hikvision device with strobe capability."
+      selector:
+        config_entry:
+          integration: hikvision_next
+    channel_id:
+      required: false
+      name: "Channel ID"
+      description: "Video channel ID (usually 1 for single camera). Default is 1."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 64
+    duration:
+      required: false
+      name: "Duration"
+      description: "Duration in seconds (1-300). Default is 10 seconds."
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 300
+          unit_of_measurement: "seconds"
+    frequency:
+      required: false
+      name: "Frequency"
+      description: "Strobe flash frequency. Default is medium."
+      default: "medium"
+      selector:
+        select:
+          mode: dropdown
+          options:
+            - label: "Low"
+              value: "low"
+            - label: "Medium"
+              value: "medium"
+            - label: "High"
+              value: "high"
+            - label: "Constant (Solid Light)"
+              value: "constant"
+
+play_voice:
+  name: Play Voice Message
+  description: "Play a pre-recorded voice message on compatible Hikvision cameras with speaker capability."
+  fields:
+    config_entry_id:
+      required: true
+      name: "Device"
+      description: "The Hikvision device with speaker capability."
+      selector:
+        config_entry:
+          integration: hikvision_next
+    audio_id:
+      required: false
+      name: "Audio ID"
+      description: "ID of the pre-recorded voice message (1-10). Default is 1."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 10
+    volume:
+      required: false
+      name: "Volume"
+      description: "Volume level (1-100). Default is 50."
+      default: 50
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+    alarm_times:
+      required: false
+      name: "Repeat"
+      description: "Number of times to play the message (1-10). Default is 1."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 10
+
+# Two-Way Audio and PTZ Services
+start_two_way_audio:
+  name: Start two-way audio
+  description: "Open a two-way audio session on the device. This signals the device to start listening for audio input. Useful for doorbells and cameras with speaker support."
+  fields:
+    config_entry_id:
+      required: true
+      name: "Device"
+      description: "The Hikvision device with two-way audio support."
+      selector:
+        config_entry:
+          integration: hikvision_next
+    channel_id:
+      required: false
+      name: "Channel ID"
+      description: "The two-way audio channel ID. Defaults to 1."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 10
+          mode: box
+
+stop_two_way_audio:
+  name: Stop two-way audio
+  description: "Close the two-way audio session on the device."
+  fields:
+    config_entry_id:
+      required: true
+      name: "Device"
+      description: "The Hikvision device with two-way audio support."
+      selector:
+        config_entry:
+          integration: hikvision_next
+    channel_id:
+      required: false
+      name: "Channel ID"
+      description: "The two-way audio channel ID. Defaults to 1."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 10
+          mode: box
+
+ptz_goto_preset:
+  name: PTZ Go to Preset
+  description: "Move PTZ camera to a preset position. The preset must be configured on the camera first."
+  fields:
+    config_entry_id:
+      required: true
+      name: "Device"
+      description: "The Hikvision device. Permission needed - Remote: PTZ Control"
+      selector:
+        config_entry:
+          integration: hikvision_next
+    channel_id:
+      required: true
+      name: "Channel ID"
+      description: "Camera channel ID. Use 1 for standalone cameras, or the NVR channel number (e.g., 1, 2, 3 for NVR channels)."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 999
+          mode: box
+    preset_id:
+      required: true
+      name: "Preset ID"
+      description: "The preset number to move to (1-300). Must be configured on the camera."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 300
+          mode: box
+
+ptz_set_patrol:
+  name: PTZ Set Patrol
+  description: "Start or stop a PTZ patrol. The patrol must be configured on the camera first."
+  fields:
+    config_entry_id:
+      required: true
+      name: "Device"
+      description: "The Hikvision device. Permission needed - Remote: PTZ Control"
+      selector:
+        config_entry:
+          integration: hikvision_next
+    channel_id:
+      required: true
+      name: "Channel ID"
+      description: "Camera channel ID. Use 1 for standalone cameras, or the NVR channel number (e.g., 1, 2, 3 for NVR channels)."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 999
+          mode: box
+    patrol_id:
+      required: true
+      name: "Patrol ID"
+      description: "The patrol number to start or stop (1-8). Must be configured on the camera."
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 8
+          mode: box
+    enabled:
+      required: true
+      name: "Enabled"
+      description: "True to start the patrol, false to stop it."
+      default: true
+      selector:
+        boolean:

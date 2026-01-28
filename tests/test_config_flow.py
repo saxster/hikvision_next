@@ -191,3 +191,160 @@ async def test_reauth(hass, mock_isapi, mock_config_entry: MockConfigEntry):
     assert result["reason"] == "reauth_successful"
     assert mock_config_entry.data[CONF_USERNAME] == TEST_CONFIG[CONF_USERNAME]
     assert mock_config_entry.data[CONF_PASSWORD] == TEST_CONFIG[CONF_PASSWORD]
+
+
+@pytest.mark.parametrize("mock_isapi_device", ["DS-2CD2386G2-IU"], indirect=True)
+async def test_config_flow_sets_alarm_server_when_enabled(hass, mock_isapi_device):
+    """Test that alarm server is configured during config flow when enabled."""
+    from tests.conftest import TEST_CONFIG_WITH_ALARM_SERVER
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "user"
+
+    with patch("custom_components.hikvision_next.isapi.ISAPIClient.set_alarm_server") as set_alarm_server_mock:
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input=TEST_CONFIG_WITH_ALARM_SERVER
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"] == TEST_CONFIG_WITH_ALARM_SERVER
+
+        # Verify set_alarm_server was called with the correct parameters
+        # (may be called more than once: during config flow and during integration setup)
+        set_alarm_server_mock.assert_called_with(
+            "http://1.0.0.11:8123",
+            "/api/hikvision",
+        )
+
+
+@pytest.mark.parametrize("mock_isapi_device", ["DS-2CD2386G2-IU"], indirect=True)
+async def test_config_flow_does_not_set_alarm_server_when_disabled(hass, mock_isapi_device):
+    """Test that alarm server is not configured when disabled in config."""
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "user"
+
+    with patch("custom_components.hikvision_next.isapi.ISAPIClient.set_alarm_server") as set_alarm_server_mock:
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input=TEST_CONFIG)
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"] == TEST_CONFIG
+
+        # Verify set_alarm_server was NOT called
+        set_alarm_server_mock.assert_not_called()
+
+
+@pytest.mark.parametrize("mock_isapi_device", ["DS-7608NXI-I2"], indirect=True)
+async def test_config_flow_sets_alarm_server_for_nvr(hass, mock_isapi_device):
+    """Test that alarm server is configured for NVR during config flow."""
+    from tests.conftest import TEST_CONFIG_WITH_ALARM_SERVER
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "user"
+
+    with patch("custom_components.hikvision_next.isapi.ISAPIClient.set_alarm_server") as set_alarm_server_mock:
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input=TEST_CONFIG_WITH_ALARM_SERVER
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["title"] == "nvr"
+
+        # Verify set_alarm_server was called with the correct parameters
+        # (may be called more than once: during config flow and during integration setup)
+        set_alarm_server_mock.assert_called_with(
+            "http://1.0.0.11:8123",
+            "/api/hikvision",
+        )
+
+
+@pytest.mark.parametrize("mock_isapi_device", ["DS-2CD2386G2-IU"], indirect=True)
+async def test_config_flow_alarm_server_failure_shows_error(hass, mock_isapi_device):
+    """Test that alarm server configuration failure shows error in config flow."""
+    from tests.conftest import TEST_CONFIG_WITH_ALARM_SERVER
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "user"
+
+    with patch(
+        "custom_components.hikvision_next.isapi.ISAPIClient.set_alarm_server",
+        side_effect=Exception("Failed to set alarm server"),
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input=TEST_CONFIG_WITH_ALARM_SERVER
+        )
+
+        # Should show error form when alarm server setup fails
+        assert result["type"] == FlowResultType.FORM
+        assert "base" in result["errors"]
+        assert "Failed to set alarm server" in result["errors"]["base"]
+
+
+@respx.mock
+@pytest.mark.parametrize("init_integration", ["DS-2CD2386G2-IU"], indirect=True)
+async def test_reconfiguration_sets_alarm_server(hass: HomeAssistant, init_integration: MockConfigEntry) -> None:
+    """Test that alarm server is configured during reconfiguration flow."""
+    from tests.conftest import TEST_CONFIG_WITH_ALARM_SERVER
+
+    entry = init_integration
+    assert entry.state == ConfigEntryState.LOADED
+
+    mock_endpoint("System/deviceInfo", "ipc1")
+
+    result = await entry.start_reconfigure_flow(hass)
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
+
+    with patch("custom_components.hikvision_next.isapi.ISAPIClient.set_alarm_server") as set_alarm_server_mock:
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            TEST_CONFIG_WITH_ALARM_SERVER,
+        )
+
+        assert result["type"] is FlowResultType.ABORT
+        assert result["reason"] == "reconfigure_successful"
+
+        # Verify set_alarm_server was called during reconfiguration
+        set_alarm_server_mock.assert_called_once_with(
+            "http://1.0.0.11:8123",
+            "/api/hikvision",
+        )
+
+
+@pytest.mark.parametrize("mock_isapi_device", ["DS-2CD2386G2-IU"], indirect=True)
+async def test_config_flow_with_hostname_alarm_server(hass, mock_isapi_device):
+    """Test that alarm server works with hostname instead of IP address."""
+    from custom_components.hikvision_next.const import CONF_SET_ALARM_SERVER, CONF_ALARM_SERVER_HOST
+
+    config_with_hostname = {
+        **TEST_CONFIG,
+        CONF_SET_ALARM_SERVER: True,
+        CONF_ALARM_SERVER_HOST: "https://ha.mydomain.com:443",
+    }
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "user"
+
+    with patch("custom_components.hikvision_next.isapi.ISAPIClient.set_alarm_server") as set_alarm_server_mock:
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input=config_with_hostname
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+
+        # Verify set_alarm_server was called with hostname
+        set_alarm_server_mock.assert_called_with(
+            "https://ha.mydomain.com:443",
+            "/api/hikvision",
+        )
