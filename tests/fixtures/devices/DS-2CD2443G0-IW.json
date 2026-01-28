@@ -256,7 +256,10 @@
             "isSupportLaserSpotManual": "false",
             "isSupportRTMP": "false",
             "isSupportTraffic": "false",
-            "isSupportChannelEventListCap": ["true", "true"],
+            "isSupportChannelEventListCap": [
+              "true",
+              "true"
+            ],
             "isSupportCityManagement": "false",
             "SDCardCtrlCap": {
               "isSupportIOCtrl": "true",
@@ -706,7 +709,10 @@
               "SVC": {
                 "enabled": "false"
               },
-              "PacketType": ["PS", "RTP"],
+              "PacketType": [
+                "PS",
+                "RTP"
+              ],
               "smoothing": "50",
               "H265Profile": "Main",
               "SmartCodec": {
@@ -783,7 +789,10 @@
               "SVC": {
                 "enabled": "false"
               },
-              "PacketType": ["PS", "RTP"],
+              "PacketType": [
+                "PS",
+                "RTP"
+              ],
               "smoothing": "50",
               "H265Profile": "Main"
             },
@@ -856,7 +865,10 @@
               "SVC": {
                 "enabled": "false"
               },
-              "PacketType": ["PS", "RTP"],
+              "PacketType": [
+                "PS",
+                "RTP"
+              ],
               "smoothing": "50",
               "H265Profile": "Main",
               "SmartCodec": {
@@ -933,7 +945,10 @@
               "SVC": {
                 "enabled": "false"
               },
-              "PacketType": ["PS", "RTP"],
+              "PacketType": [
+                "PS",
+                "RTP"
+              ],
               "smoothing": "50",
               "H265Profile": "Main",
               "SmartCodec": {
@@ -1140,7 +1155,10 @@
                   "SVC": {
                     "enabled": "false"
                   },
-                  "PacketType": ["PS", "RTP"],
+                  "PacketType": [
+                    "PS",
+                    "RTP"
+                  ],
                   "smoothing": "50",
                   "H265Profile": "Main",
                   "SmartCodec": {
@@ -1217,7 +1235,10 @@
                   "SVC": {
                     "enabled": "false"
                   },
-                  "PacketType": ["PS", "RTP"],
+                  "PacketType": [
+                    "PS",
+                    "RTP"
+                  ],
                   "smoothing": "50",
                   "H265Profile": "Main"
                 },
@@ -1228,6 +1249,22 @@
                 }
               }
             ]
+          }
+        }
+      },
+      "System/TwoWayAudio/channels": {
+        "response": {
+          "TwoWayAudioChannelList": {
+            "@version": "2.0",
+            "@xmlns": "http://www.isapi.org/ver20/XMLSchema",
+            "TwoWayAudioChannel": {
+              "id": "1",
+              "enabled": "true",
+              "audioCompressionType": "G.711ulaw",
+              "audioInputType": "MicIn",
+              "speakerVolume": "60",
+              "noisereduce": "45"
+            }
           }
         }
       }

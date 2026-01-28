@@ -106,6 +106,7 @@ class CapabilitiesInfo:
     support_video_intercom: bool = False  # if device is a video doorbell/intercom
     input_ports: int = 0
     output_ports: int = 0
+    support_two_way_audio: bool = False  # if device supports two-way audio
     # Active Deterrence capabilities
     support_siren: bool = False
     support_strobe: bool = False
@@ -146,6 +147,15 @@ class ProtocolsInfo:
 
 
 @dataclass
+class TwoWayAudioInfo:
+    """Holds info for two-way audio channel."""
+
+    id: int
+    enabled: bool
+    audio_compression: str  # e.g., "G.711ulaw", "G.711alaw", "G.722.1", "G.726", "MP2L2", "PCM"
+    audio_input_type: str  # e.g., "MicIn", "LineIn"
+    speaker_volume: int = 50
+    mic_volume: int = 50
 class TwoWayAudioChannelInfo:
     """Holds info of a two-way audio channel."""
 

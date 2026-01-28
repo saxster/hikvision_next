@@ -1723,9 +1723,9 @@
                       "dynVideoInputID": "2"
                     },
                     {
-                    "id": "center",
-                    "notificationMethod": "center"
-                  }
+                      "id": "center",
+                      "notificationMethod": "center"
+                    }
                   ]
                 }
               },
@@ -2021,9 +2021,9 @@
                 "eventType": "diskerror",
                 "EventTriggerNotificationList": {
                   "EventTriggerNotification": {
-                      "id": "beep",
-                      "notificationMethod": "beep"
-                    }
+                    "id": "beep",
+                    "notificationMethod": "beep"
+                  }
                 }
               },
               {
@@ -3195,6 +3195,32 @@
             "recogRuleType": "vectorMode",
             "humanMisinfoFilterEnabled": "false",
             "vehicleMisinfoFilterEnabled": "false"
+          }
+        }
+      },
+      "System/TwoWayAudio/channels": {
+        "response": {
+          "TwoWayAudioChannelList": {
+            "@version": "2.0",
+            "@xmlns": "http://www.isapi.org/ver20/XMLSchema",
+            "TwoWayAudioChannel": [
+              {
+                "id": "1",
+                "enabled": "true",
+                "audioCompressionType": "G.711ulaw",
+                "audioInputType": "MicIn",
+                "speakerVolume": "75",
+                "noisereduce": "50"
+              },
+              {
+                "id": "2",
+                "enabled": "false",
+                "audioCompressionType": "G.711ulaw",
+                "audioInputType": "MicIn",
+                "speakerVolume": "50",
+                "noisereduce": "50"
+              }
+            ]
           }
         }
       }

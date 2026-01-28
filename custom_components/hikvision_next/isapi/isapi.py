@@ -42,6 +42,7 @@ from .models import (
     MutexIssue,
     ProtocolsInfo,
     StorageInfo,
+    TwoWayAudioInfo,
     TwoWayAudioChannelInfo,
 )
 from .utils import bool_to_str, deep_get, parse_isapi_response, str_to_bool
@@ -82,6 +83,7 @@ class ISAPIClient:
         self.supported_events: list[EventInfo] = []
         self.storage: list[StorageInfo] = []
         self.protocols = ProtocolsInfo()
+        self.two_way_audio: list[TwoWayAudioInfo] = []
         self.pending_initialization = False
         self.two_way_audio_channels: list[TwoWayAudioChannelInfo] = []
 
@@ -130,6 +132,10 @@ class ISAPIClient:
         )
         self.capabilities.support_voice = self.capabilities.audio_outputs > 0
 
+        # Check for two-way audio support based on voicetalkNums capability
+        voicetalk_nums = int(capabilities.get("voicetalkNums", 0))
+        self.capabilities.support_two_way_audio = voicetalk_nums > 0
+
         # Set if NVR based on whether more than 1 supported IP or analog cameras
         # Single IP camera will show 0 supported devices in total
         if self.capabilities.analog_cameras_inputs + self.capabilities.digital_cameras_inputs > 1:
@@ -144,6 +150,10 @@ class ISAPIClient:
         with suppress(Exception):
             self.storage = await self.get_storage_devices()
 
+        # Fetch two-way audio channels if supported
+        if self.capabilities.support_two_way_audio:
+            with suppress(Exception):
+                self.two_way_audio = await self.get_two_way_audio_channels()
     async def _check_video_intercom_support(self) -> bool:
         """Check if the device supports VideoIntercom (doorbell) functionality."""
         try:
@@ -497,6 +507,78 @@ class ISAPIClient:
         except IndexError:
             # Storage id does not exist
             return None
+
+    async def get_two_way_audio_channels(self) -> list[TwoWayAudioInfo]:
+        """Get two-way audio channels from device."""
+        channels = []
+        try:
+            response = await self.request(GET, "System/TwoWayAudio/channels")
+            channel_list = deep_get(response, "TwoWayAudioChannelList.TwoWayAudioChannel", [])
+            if not isinstance(channel_list, list):
+                channel_list = [channel_list]
+            for channel in channel_list:
+                channels.append(
+                    TwoWayAudioInfo(
+                        id=int(channel.get("id", 1)),
+                        enabled=str_to_bool(channel.get("enabled", "false")),
+                        audio_compression=channel.get("audioCompressionType", "G.711ulaw"),
+                        audio_input_type=channel.get("audioInputType", "MicIn"),
+                        speaker_volume=int(channel.get("speakerVolume", 50)),
+                        mic_volume=int(channel.get("noisereduce", 50)),
+                    )
+                )
+        except Exception as ex:
+            _LOGGER.debug("Two-way audio not supported or error fetching channels: %s", ex)
+        return channels
+
+    def get_two_way_audio_channel_by_id(self, channel_id: int) -> TwoWayAudioInfo | None:
+        """Get two-way audio channel by id."""
+        for channel in self.two_way_audio:
+            if channel.id == channel_id:
+                return channel
+        return None
+
+    async def open_two_way_audio(self, channel_id: int = 1) -> bool:
+        """Open two-way audio channel for transmission."""
+        try:
+            await self.request(PUT, f"System/TwoWayAudio/channels/{channel_id}/open", present="xml")
+            return True
+        except Exception as ex:
+            _LOGGER.warning("Failed to open two-way audio channel %s: %s", channel_id, ex)
+            return False
+
+    async def close_two_way_audio(self, channel_id: int = 1) -> bool:
+        """Close two-way audio channel."""
+        try:
+            await self.request(PUT, f"System/TwoWayAudio/channels/{channel_id}/close", present="xml")
+            return True
+        except Exception as ex:
+            _LOGGER.warning("Failed to close two-way audio channel %s: %s", channel_id, ex)
+            return False
+
+    async def send_two_way_audio_data(self, audio_data: bytes, channel_id: int = 1) -> bool:
+        """Send audio data to two-way audio channel.
+
+        Audio data should be G.711 ulaw encoded, 8kHz, mono.
+        """
+        try:
+            full_url = self.get_isapi_url(f"System/TwoWayAudio/channels/{channel_id}/audioData")
+            if not self._auth_method:
+                await self._detect_auth_method()
+
+            response = await self._session.request(
+                PUT,
+                full_url,
+                auth=self._auth_method,
+                content=audio_data,
+                headers={"Content-Type": "application/octet-stream"},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return True
+        except Exception as ex:
+            _LOGGER.warning("Failed to send two-way audio data: %s", ex)
+            return False
 
     def _get_event_state_node(self, event: EventInfo) -> str:
         """Get xml key for event state."""

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<TwoWayAudioChannelList version="2.0"
+  xmlns="http://www.isapi.org/ver20/XMLSchema">
+  <TwoWayAudioChannel>
+    <id>1</id>
+    <enabled>true</enabled>
+    <audioCompressionType>G.711ulaw</audioCompressionType>
+    <audioInputType>MicIn</audioInputType>
+    <speakerVolume>70</speakerVolume>
+    <noisereduce>50</noisereduce>
+  </TwoWayAudioChannel>
+</TwoWayAudioChannelList>
